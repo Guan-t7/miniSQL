@@ -27,9 +27,7 @@ BufferManager::~BufferManager()
 
 void * BufferManager::alloc_space()
 {
-	if (pages.size() != MAX_PAGES)
-		return new char[SIZEOF_PAGE];
-	else // buffer is full. clock approx.
+	if (pages.size() == MAX_PAGES) // buffer is full. clock approx.
 	{
 		while (true)
 		{
@@ -47,6 +45,7 @@ void * BufferManager::alloc_space()
 			}
 		}
 	}
+	return new char[SIZEOF_PAGE];
 }
 
 Buf_Page & BufferManager::read_file(p_Page p)
@@ -69,12 +68,14 @@ void BufferManager::writeback_file(p_Page p)
 const void * BufferManager::getPage_r(p_Page p)
 {
 	if (!pages.count(p)) read_file(p);
+	pages[p].clk_ref = true;
 	return pages[p].m;
 }
 
 void * BufferManager::getPage_w(p_Page p)
 {
 	if (!pages.count(p)) read_file(p);
+	pages[p].clk_ref = true;
 	pages[p].dirty = true;
 	return pages[p].m;
 }
@@ -97,6 +98,18 @@ void BufferManager::unpinPage(p_Page p)
 	{
 		pages[p].pinned = false;
 		pinned_pages--;
+	}
+}
+
+void BufferManager::inform_deletion(string filename)
+{
+	for (auto &&key_page : pages)
+	{
+		if (get<0>(key_page.first) == filename)
+		{
+			key_page.second.pinned = key_page.second.dirty = key_page.second.clk_ref = false;
+			// will be replaced physically when space is needed
+		}
 	}
 }
 

@@ -40,5 +40,6 @@ public:
 	void* getPage_w(p_Page p);
 	int pinPage(p_Page p);	// 0 on success. may FAIL if u pin too many
 	void unpinPage(p_Page p);
+	void inform_deletion(string filename);	// let me know when some file is deleted on disk
 	void flush();	// write back all dirty pages to disk: sync the changes
 };
