@@ -17,7 +17,7 @@ const unsigned MAX_PAGES = 128 * 1024;	// buffer: 512 M
 
 /* 数据文件：预计每张表一个 relation.mdbf 
 		大小超过 4G 时可能会有问题
-	Advice: B+, one leaf node fits in one page. Index pageNum
+	Advice: B+, one leaf node fits in one page. Index ___
 */
 /* Responsibility: Buffer File I/O
 	U manage structures stored in that page.
