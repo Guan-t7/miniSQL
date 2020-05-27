@@ -25,16 +25,20 @@ const unsigned MAX_PAGES = 128 * 1024;	// buffer: 512 M
 using p_Page = tuple<string, unsigned>;	// filename, pageNum
 struct Buf_Page;
 
-class BufferManager
+class BufferManager // singleton
 {
+private:
+	static BufferManager bm;
 	unordered_map<p_Page, Buf_Page> pages;
 	unsigned pinned_pages = 0;
 
+	BufferManager();
+	void operator=(BufferManager&); // disallowed
 	void * alloc_space();
 	Buf_Page & read_file(p_Page p);
 	void writeback_file(p_Page p);
 public:
-	BufferManager();
+	static BufferManager& instance() { return bm; }
 	~BufferManager();
 	const void* getPage_r(p_Page p);
 	void* getPage_w(p_Page p);
