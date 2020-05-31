@@ -15,15 +15,12 @@ RecordManager::~RecordManager()
 
 int RecordManager::create_table(string tableName)
 {
-	ofstream fo(tableName + ".mdbf");
-	return fo.fail();
+	return bm.create_file(tableName + ".mdbf");
 }
 
 int RecordManager::drop_table(string tableName)
 {
-	int r = remove((tableName + ".mdbf").c_str());
-	bm.inform_deletion(tableName + ".mdbf");
-	return r;
+	return bm.delete_file(tableName + ".mdbf");
 }
 
 struct Entry

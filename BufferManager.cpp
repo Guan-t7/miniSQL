@@ -1,5 +1,5 @@
 #include "BufferManager.h"
-#include <fstream>
+#include "pch.h"
 
 // 顺序读写 - 读取一个大文件
 // use read() and write()
@@ -16,6 +16,17 @@ struct Buf_Page
 
 BufferManager::BufferManager()
 {
+	ifstream fi(BUF_META_PATH); // load meta from disk
+	if (!fi.fail())
+	{
+		string filename;
+		unsigned count;
+		while (fi.peek() != EOF)
+		{
+			(fi >> filename >> count).get();
+			_totalPages[filename] = count;
+		}
+	}
 	pages.reserve(MAX_PAGES);
 }
 
@@ -23,6 +34,11 @@ BufferManager::~BufferManager()
 {
 	flush();
 	for (auto &&key_page : pages) delete[] key_page.second.m;
+	ofstream fo(BUF_META_PATH); // save meta to disk
+	for (auto&& i : _totalPages)
+	{
+		fo << i.first << " " << i.second << endl;
+	}
 }
 
 void * BufferManager::alloc_space()
@@ -50,9 +66,20 @@ void * BufferManager::alloc_space()
 
 Buf_Page & BufferManager::read_file(p_Page p)
 {
+	string &filename = get<0>(p);
+	unsigned pageNum = get<1>(p);
+	// test file size. inflate the file if needed.
+	fstream fin(filename, std::ios::binary | std::ios::ate);
+	if (fin.tellg() / SIZEOF_PAGE < (pageNum + 1))
+	{
+		fin.seekp(2 * (pageNum + 1)*SIZEOF_PAGE - 1);
+		fin.write("", 1);
+	}
+	// update totalPages stat 
+	_totalPages[filename] = max(_totalPages[filename], pageNum + 1);
+	// read from disk to mem
 	void * m_ = alloc_space();
-	ifstream fin(get<0>(p));
-	fin.seekg(get<1>(p) * SIZEOF_PAGE);
+	fin.seekg(pageNum * SIZEOF_PAGE);
 	fin.read(static_cast<char*>(m_), SIZEOF_PAGE);
 	return pages.emplace(p, Buf_Page(m_)).first->second;
 }
@@ -80,6 +107,13 @@ void * BufferManager::getPage_w(p_Page p)
 	return pages[p].m;
 }
 
+unsigned BufferManager::totalPages(string filename)
+{
+	if (_totalPages.count(filename))
+		return _totalPages[filename];
+	return 0;
+}
+
 int BufferManager::pinPage(p_Page p)
 {
 	if (pinned_pages * 2 > MAX_PAGES) return 1;
@@ -101,7 +135,14 @@ void BufferManager::unpinPage(p_Page p)
 	}
 }
 
-void BufferManager::inform_deletion(string filename)
+int BufferManager::create_file(string filename)
+{
+	_totalPages[filename] = 0;
+	ofstream fo(filename);
+	return fo.fail();
+}
+
+int BufferManager::delete_file(string filename)
 {
 	for (auto &&key_page : pages)
 	{
@@ -111,6 +152,8 @@ void BufferManager::inform_deletion(string filename)
 			// will be replaced physically when space is needed
 		}
 	}
+	_totalPages.erase(filename);
+	return remove(filename.c_str());
 }
 
 void BufferManager::flush()

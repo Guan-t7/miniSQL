@@ -14,13 +14,12 @@ const unsigned MAX_PAGES = 128;	// buffer: 512 K
 #else
 const unsigned MAX_PAGES = 128 * 1024;	// buffer: 512 M
 #endif // DEBUG
+// 用于存放 number of pages
+const string BUF_META_PATH = "BUF_META";
 
-/* 数据文件：预计每张表一个 relation.mdbf 
-		大小超过 4G 时可能会有问题
-	Advice: B+, one leaf node fits in one page. Index ___
-*/
 /* Responsibility: Buffer File I/O
 	U manage structures stored in that page.
+ !	Physical file size doesn't reveal number of pages it really held.
 */
 using p_Page = tuple<string, unsigned>;	// filename, pageNum
 struct Buf_Page;
@@ -30,6 +29,7 @@ class BufferManager // singleton
 private:
 	static BufferManager bm;
 	unordered_map<p_Page, Buf_Page> pages;
+	unordered_map<string, unsigned> _totalPages;
 	unsigned pinned_pages = 0;
 
 	BufferManager();
@@ -42,8 +42,11 @@ public:
 	~BufferManager();
 	const void* getPage_r(p_Page p);
 	void* getPage_w(p_Page p);
-	int pinPage(p_Page p);	// 0 on success. may FAIL if u pin too many
+	unsigned totalPages(string filename);
+	// int: 0 on success below
+	int pinPage(p_Page p);	// may FAIL if u pin too many
 	void unpinPage(p_Page p);
-	void inform_deletion(string filename);	// let me know when some file is deleted on disk
+	int create_file(string filename);
+	int delete_file(string filename);
 	void flush();	// write back all dirty pages to disk: sync the changes
 };
