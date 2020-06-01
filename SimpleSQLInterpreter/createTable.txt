@@ -1,0 +1,6 @@
+create table Foo(
+    i int,
+    f float,
+    c char (10 ),
+    primary key ( i)
+);

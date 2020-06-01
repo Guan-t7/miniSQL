@@ -1,0 +1,11 @@
+create table Foo(
+    i int,
+    f float,
+    c char (10 ),
+    primary key ( i)
+);
+insert into Foo values (1,-1.3,'aaaa');
+select * from Foo where i = 1 and f <= 0;
+delete from Foo;
+drop table Foo;
+quit;

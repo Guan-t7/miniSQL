@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="antlr">
+      <UniqueIdentifier>{ac6a5178-9b23-4665-a79b-d90ec0c32fab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="antlr\header">
+      <UniqueIdentifier>{0b6c62d1-6419-4449-8569-1903a0a8f4d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="antlr\src">
+      <UniqueIdentifier>{8a8b5c5f-f7a2-43c5-bf2c-c100324cf63e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interpreter">
+      <UniqueIdentifier>{74189c10-ed20-49e3-b79a-e125950b4cd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interpreter\header">
+      <UniqueIdentifier>{9c16e3ea-3b07-47d0-9255-7deecc1a9528}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interpreter\src">
+      <UniqueIdentifier>{608669f1-817f-4158-a2b5-6c7465cf9c6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interpreter\header\result">
+      <UniqueIdentifier>{6b11f919-0c00-4cc4-89bb-f0ff6e56aae5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interpreter\src\result">
+      <UniqueIdentifier>{d87c6579-3b72-4485-94eb-80ccdaadd2d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="catalogManager">
+      <UniqueIdentifier>{9e56a784-6cfa-40d7-afb8-15434817d6db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="catalogManager\header">
+      <UniqueIdentifier>{9641b835-8170-4e02-b3a7-4dffe4a38287}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="catalogManager\src">
+      <UniqueIdentifier>{b47f2c45-a1f3-4e7c-a494-df656b0b89e8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SQLVisitor.cpp">
+      <Filter>interpreter\src</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\cpp\sqlLexer.cpp">
+      <Filter>antlr\src</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\cpp\sqlParser.cpp">
+      <Filter>antlr\src</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\cpp\sqlParserBaseListener.cpp">
+      <Filter>antlr\src</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\cpp\sqlParserBaseVisitor.cpp">
+      <Filter>antlr\src</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\cpp\sqlParserListener.cpp">
+      <Filter>antlr\src</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\cpp\sqlParserVisitor.cpp">
+      <Filter>antlr\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Interpreter.cpp">
+      <Filter>interpreter\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Parser.cpp">
+      <Filter>interpreter\src</Filter>
+    </ClCompile>
+    <ClCompile Include="DBExecutor.cpp">
+      <Filter>interpreter\src</Filter>
+    </ClCompile>
+    <ClCompile Include="SelectResult.cpp">
+      <Filter>interpreter\src\result</Filter>
+    </ClCompile>
+    <ClCompile Include="QueryResult.cpp">
+      <Filter>interpreter\src\result</Filter>
+    </ClCompile>
+    <ClCompile Include="Result.cpp">
+      <Filter>interpreter\src\result</Filter>
+    </ClCompile>
+    <ClCompile Include="CatalogManager.cpp">
+      <Filter>catalogManager\src</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorListener.cpp">
+      <Filter>interpreter\src</Filter>
+    </ClCompile>
+    <ClCompile Include="test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SQLVisitor.h">
+      <Filter>interpreter\header</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\cpp\sqlLexer.h">
+      <Filter>antlr\header</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\cpp\sqlParser.h">
+      <Filter>antlr\header</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\cpp\sqlParserBaseListener.h">
+      <Filter>antlr\header</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\cpp\sqlParserBaseVisitor.h">
+      <Filter>antlr\header</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\cpp\sqlParserListener.h">
+      <Filter>antlr\header</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\cpp\sqlParserVisitor.h">
+      <Filter>antlr\header</Filter>
+    </ClInclude>
+    <ClInclude Include="Interpreter.h">
+      <Filter>interpreter\header</Filter>
+    </ClInclude>
+    <ClInclude Include="Parser.h">
+      <Filter>interpreter\header</Filter>
+    </ClInclude>
+    <ClInclude Include="DBExecutor.h">
+      <Filter>interpreter\header</Filter>
+    </ClInclude>
+    <ClInclude Include="QueryResult.h">
+      <Filter>interpreter\header\result</Filter>
+    </ClInclude>
+    <ClInclude Include="SelectResult.h">
+      <Filter>interpreter\header\result</Filter>
+    </ClInclude>
+    <ClInclude Include="Result.h">
+      <Filter>interpreter\header\result</Filter>
+    </ClInclude>
+    <ClInclude Include="CatalogManager.h">
+      <Filter>catalogManager\header</Filter>
+    </ClInclude>
+    <ClInclude Include="DBInfo.h">
+      <Filter>catalogManager\header</Filter>
+    </ClInclude>
+    <ClInclude Include="error.h" />
+    <ClInclude Include="ErrorListener.h">
+      <Filter>interpreter\header</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,1 @@
+antlr sqlLexer.g4 sqlParser.g4 -o cpp -visitor
