@@ -12,5 +12,7 @@ private:
 };
 
 struct Condition {
-	std::string col, val, op;
+	std::string col, val;
+
+	enum opType { E, NE, L, G, LE, GE }op; // rel_op, ref. x86 asm
 };
