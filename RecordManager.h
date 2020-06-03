@@ -30,6 +30,7 @@ private:
 	_DataType * mk_obj(std::pair<DataType, int>& type, const void * mp_record);
 	_DataType * mk_obj(std::pair<DataType, int>& type, const string& val);
 	bool cond_fit(Condition & c, _DataType * data, _DataType * cond_val);
+	void insert_page(std::string & tableName, size_t i, unsigned int rec_size, _DataType * dataArr[]);
 public:
 	RecordManager();
 	~RecordManager();
@@ -67,7 +68,7 @@ public:
 	bool operator<(const _DataType &d2) const { return d < dynamic_cast<const _StringType &>(d2).d; }
 	bool operator==(const _DataType &d2) const { return d == dynamic_cast<const _StringType &>(d2).d; }
 	string to_string() const { return d; }
-	void dump(char* p) const {  }
+	void dump(char* p) const { d.copy(p, m_size); } //todo can be modified to adapt varchar
 };
 
 
