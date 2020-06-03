@@ -22,13 +22,22 @@ const string BUF_META_PATH = "BUF_META";
  !	Physical file size doesn't reveal number of pages it really held.
 */
 using p_Page = tuple<string, unsigned>;	// filename, pageNum
+struct MyHash
+{
+	std::size_t operator()(p_Page const& p) const
+	{
+		std::size_t h1 = std::hash<std::string>{}(get<0>(p));
+		std::size_t h2 = std::hash<unsigned>{}(get<1>(p));
+		return h1 ^ (h2 << 1);
+	}
+};
 struct Buf_Page;
 
 class BufferManager // singleton
 {
 private:
 	static BufferManager bm;
-	unordered_map<p_Page, Buf_Page> pages;
+	unordered_map<p_Page, Buf_Page, MyHash> pages;
 	unordered_map<string, unsigned> _totalPages;
 	unsigned pinned_pages = 0;
 
