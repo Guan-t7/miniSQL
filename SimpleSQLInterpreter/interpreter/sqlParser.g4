@@ -76,12 +76,12 @@ columnName: TOKEN;
 indexName: TOKEN;
 literal: DECIMAL_LITERAL | STRING_LITERAL | REAL_LITERAL;
 op:
-	EQUAL
-	| NOT_EQUAL
-	| SMALLER
-	| SMALLER_EQUAL
-	| GREATER
-	| GREATER_EQUAL;
+	EQUAL #opEQ
+	| NOT_EQUAL #opNEQ
+	| SMALLER #opLT
+	| SMALLER_EQUAL #opLTE
+	| GREATER #opGT
+	| GREATER_EQUAL #opGTE;
 type:
 	charType	# charTypeDef
 	| INT		# intTypeDef

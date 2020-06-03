@@ -1,10 +1,78 @@
 #include "DBExecutor.h"
+#include "RecordManager.h"
 
 #include <algorithm>
 #include <set>
 
 #include "CatalogManager.h"
 #include "error.h"
+
+
+int validateDataType(std::string data, std::pair<std::string, int> type) {
+	bool success = true;
+	if (type.first == "int") {
+		size_t pos;
+		try {
+			int n = std::stoi(data, &pos);
+			if (pos != data.length()) success = false;
+		} catch (...) {
+			success = false;
+		}
+	}
+	if (type.first == "float") {
+		size_t pos;
+		try {
+			float n = std::stof(data, &pos);
+			if (pos != data.length()) success = false;
+		} catch (...) {
+			success = false;
+		}
+	}
+	if (success == false) return BAD_VALUE;
+	if (type.first == "char") {
+		if (data.size() > type.second) success = false;
+	}
+	if (success == false) return TOO_LONG_STRING;
+	return SUCCESS;
+}
+
+SelectResult DBExecutor::selectQuery(std::string tableName, std::vector<Condition> conds) {
+	SelectResult result(SUCCESS);
+	const auto tableInfo = CatalogManager::getTableInfo(tableName);
+	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
+	for (auto cond : conds) {
+		Column refCol{};
+		for (auto col : tableInfo.metadata) {
+			if (col.name == cond.col) refCol = col;
+		}
+		if (refCol.name.empty()) return NOT_EXISTING_COLUMN_NAME;
+		int ret;
+		if ((ret = validateDataType(cond.val, refCol.type)) != SUCCESS) return ret;
+	}
+	RecordManager rm;
+	result.setSuccess(tableInfo,rm.select(tableName, conds));
+	return result;
+	/*TODO: call index manager*/
+}
+
+QueryResult DBExecutor::deleteQuery(std::string tableName, std::vector<Condition> conds) {
+	QueryResult result(SUCCESS);
+	const auto tableInfo = CatalogManager::getTableInfo(tableName);
+	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
+	for (auto cond : conds) {
+		Column refCol{};
+		for (auto col : tableInfo.metadata) {
+			if (col.name == cond.col) refCol = col;
+		}
+		if (refCol.name.empty()) return NOT_EXISTING_COLUMN_NAME;
+		int ret;
+		if ((ret = validateDataType(cond.val, refCol.type)) != SUCCESS) return ret;
+	}
+	RecordManager rm;
+	result.setSuccess(rm.delete_rec(tableName, conds));
+	return result;
+	/*TODO: call index manager*/
+}
 
 QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	QueryResult result(SUCCESS);
@@ -29,11 +97,13 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	}
 	if (primaryKeyFound) {
 		if (!info.primaryKey.empty()) {
-			/*TODO: inform the index manager?*/
+			/*TODO: call index manager*/
 		}
 	} else {
 		return UNKNOWN_PRIMARY_KEY;
 	}
+	RecordManager rm;
+	rm.create_table(info.name);
 	CatalogManager::updateTableInfo(info);
 	return result;
 }
@@ -58,6 +128,22 @@ QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
 	return result;
 }
 
+QueryResult DBExecutor::insertQuery(std::string tableName, std::vector<std::string> values) {
+	QueryResult result(SUCCESS);
+	const auto tableInfo = CatalogManager::getTableInfo(tableName);
+	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
+	if (values.size() != tableInfo.metadata.size()) return WRONG_VALUE_COUNT;
+	for (int i = 0; i < values.size(); i++) {
+		int ret;
+		if ((ret = validateDataType(values[i], tableInfo.metadata[i].type)) != SUCCESS) {
+			return ret;
+		}
+	}
+	RecordManager rm;
+	rm.insert(tableName, values);
+	return result;
+}
+
 QueryResult DBExecutor::dropTableQuery(std::string tableName) {
 	QueryResult result(SUCCESS);
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
@@ -66,7 +152,10 @@ QueryResult DBExecutor::dropTableQuery(std::string tableName) {
 	indexInfo.indexInfos.erase(std::remove_if(indexInfo.indexInfos.begin(), indexInfo.indexInfos.end(),
 		[&tableName](const IndexInfo& info) {return info.tableName == tableName; }), indexInfo.indexInfos.end());
 	CatalogManager::updateIndex(indexInfo);
+	/*TODO: call index manager*/
 	CatalogManager::dropTable(tableName);
+	RecordManager rm;
+	rm.drop_table(tableName);
 	return result;
 }
 
@@ -74,11 +163,12 @@ QueryResult DBExecutor::dropIndexQuery(std::string indexName) {
 	QueryResult result(SUCCESS);
 	auto indexInfos = CatalogManager::getIndex();
 	const auto pos = std::find_if(indexInfos.indexInfos.begin(), indexInfos.indexInfos.end(),
-	                           [&indexName](const IndexInfo& i) {return i.indexName == indexName; });
+		[&indexName](const IndexInfo& i) {return i.indexName == indexName; });
 	if (pos == indexInfos.indexInfos.end()) {
 		return NOT_EXISTING_INDEX_NAME;
 	}
 	indexInfos.indexInfos.erase(pos);
+	/*TODO: call index manager*/
 	CatalogManager::updateIndex(indexInfos);
 	return result;
 }

@@ -100,8 +100,23 @@ public:
   virtual void enterLiteral(sqlParser::LiteralContext * /*ctx*/) override { }
   virtual void exitLiteral(sqlParser::LiteralContext * /*ctx*/) override { }
 
-  virtual void enterOp(sqlParser::OpContext * /*ctx*/) override { }
-  virtual void exitOp(sqlParser::OpContext * /*ctx*/) override { }
+  virtual void enterOpEQ(sqlParser::OpEQContext * /*ctx*/) override { }
+  virtual void exitOpEQ(sqlParser::OpEQContext * /*ctx*/) override { }
+
+  virtual void enterOpNEQ(sqlParser::OpNEQContext * /*ctx*/) override { }
+  virtual void exitOpNEQ(sqlParser::OpNEQContext * /*ctx*/) override { }
+
+  virtual void enterOpLT(sqlParser::OpLTContext * /*ctx*/) override { }
+  virtual void exitOpLT(sqlParser::OpLTContext * /*ctx*/) override { }
+
+  virtual void enterOpLTE(sqlParser::OpLTEContext * /*ctx*/) override { }
+  virtual void exitOpLTE(sqlParser::OpLTEContext * /*ctx*/) override { }
+
+  virtual void enterOpGT(sqlParser::OpGTContext * /*ctx*/) override { }
+  virtual void exitOpGT(sqlParser::OpGTContext * /*ctx*/) override { }
+
+  virtual void enterOpGTE(sqlParser::OpGTEContext * /*ctx*/) override { }
+  virtual void exitOpGTE(sqlParser::OpGTEContext * /*ctx*/) override { }
 
   virtual void enterCharTypeDef(sqlParser::CharTypeDefContext * /*ctx*/) override { }
   virtual void exitCharTypeDef(sqlParser::CharTypeDefContext * /*ctx*/) override { }

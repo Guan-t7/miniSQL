@@ -1,5 +1,5 @@
 
-// Generated from d:\work\personal\2020DB\SimpleSQLInterpreter\interpreter\sqlParser.g4 by ANTLR 4.7.1
+// Generated from d:\work\personal\2020DB\miniSQL\SimpleSQLInterpreter\interpreter\sqlParser.g4 by ANTLR 4.7.1
 
 #pragma once
 
@@ -19,8 +19,8 @@ public:
     EQUAL = 22, NOT_EQUAL = 23, SMALLER = 24, GREATER = 25, SMALLER_EQUAL = 26, 
     GREATER_EQUAL = 27, AND = 28, OR = 29, CHAR = 30, INT = 31, FLOAT = 32, 
     UNIQUE = 33, DECIMAL_LITERAL = 34, STRING_LITERAL = 35, REAL_LITERAL = 36, 
-    PRIMARY_KEY = 37, VALUES = 38, COMMA = 39, SEMICOLON = 40, TOKEN = 41, 
-    ERROR_RECONGNIGION = 42
+    PRIMARY_KEY = 37, VALUES = 38, COMMA = 39, SEMICOLON = 40, DQUOTA_STRING = 41, 
+    TOKEN = 42, ERROR_RECONGNIGION = 43
   };
 
   enum {
@@ -459,15 +459,56 @@ public:
   class  OpContext : public antlr4::ParserRuleContext {
   public:
     OpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+   
+    OpContext() : antlr4::ParserRuleContext() { }
+    void copyFrom(OpContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
+
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *EQUAL();
-    antlr4::tree::TerminalNode *NOT_EQUAL();
-    antlr4::tree::TerminalNode *SMALLER();
-    antlr4::tree::TerminalNode *SMALLER_EQUAL();
-    antlr4::tree::TerminalNode *GREATER();
-    antlr4::tree::TerminalNode *GREATER_EQUAL();
 
    
+  };
+
+  class  OpGTEContext : public OpContext {
+  public:
+    OpGTEContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *GREATER_EQUAL();
+  };
+
+  class  OpEQContext : public OpContext {
+  public:
+    OpEQContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *EQUAL();
+  };
+
+  class  OpNEQContext : public OpContext {
+  public:
+    OpNEQContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *NOT_EQUAL();
+  };
+
+  class  OpGTContext : public OpContext {
+  public:
+    OpGTContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *GREATER();
+  };
+
+  class  OpLTEContext : public OpContext {
+  public:
+    OpLTEContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *SMALLER_EQUAL();
+  };
+
+  class  OpLTContext : public OpContext {
+  public:
+    OpLTContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *SMALLER();
   };
 
   OpContext* op();

@@ -75,7 +75,17 @@ public:
 
     virtual antlrcpp::Any visitLiteral(sqlParser::LiteralContext *context) = 0;
 
-    virtual antlrcpp::Any visitOp(sqlParser::OpContext *context) = 0;
+    virtual antlrcpp::Any visitOpEQ(sqlParser::OpEQContext *context) = 0;
+
+    virtual antlrcpp::Any visitOpNEQ(sqlParser::OpNEQContext *context) = 0;
+
+    virtual antlrcpp::Any visitOpLT(sqlParser::OpLTContext *context) = 0;
+
+    virtual antlrcpp::Any visitOpLTE(sqlParser::OpLTEContext *context) = 0;
+
+    virtual antlrcpp::Any visitOpGT(sqlParser::OpGTContext *context) = 0;
+
+    virtual antlrcpp::Any visitOpGTE(sqlParser::OpGTEContext *context) = 0;
 
     virtual antlrcpp::Any visitCharTypeDef(sqlParser::CharTypeDefContext *context) = 0;
 

@@ -34,6 +34,12 @@
     <Filter Include="catalogManager\src">
       <UniqueIdentifier>{b47f2c45-a1f3-4e7c-a494-df656b0b89e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="recordManager">
+      <UniqueIdentifier>{478bd4ae-7c63-4d1d-a427-259eb0064722}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bufferManager">
+      <UniqueIdentifier>{92c973a0-f806-4ab4-9ba8-770b4fb6c919}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SQLVisitor.cpp">
@@ -82,6 +88,12 @@
       <Filter>interpreter\src</Filter>
     </ClCompile>
     <ClCompile Include="test.cpp" />
+    <ClCompile Include="..\RecordManager.cpp">
+      <Filter>recordManager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BufferManager.cpp">
+      <Filter>bufferManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SQLVisitor.h">
@@ -132,6 +144,12 @@
     <ClInclude Include="error.h" />
     <ClInclude Include="ErrorListener.h">
       <Filter>interpreter\header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RecordManager.h">
+      <Filter>recordManager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\BufferManager.h">
+      <Filter>bufferManager</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

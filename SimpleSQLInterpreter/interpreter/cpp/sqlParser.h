@@ -16,8 +16,8 @@ public:
     SELECT = 5, INSERT = 6, DELETE = 7, DROP = 8, CREATE = 9, QUIT = 10, 
     EXECFILE = 11, TABLE = 12, INDEX = 13, WILDCARD = 14, FROM = 15, INTO = 16, 
     ON = 17, QUOTE = 18, OPEN_BRACKET = 19, CLOSE_BRACKET = 20, WHERE = 21, 
-    EQUAL = 22, NOT_EQUAL = 23, SMALLER = 24, GREATER = 25, SMALLER_EQUAL = 26, 
-    GREATER_EQUAL = 27, AND = 28, OR = 29, CHAR = 30, INT = 31, FLOAT = 32, 
+    AND = 22, OR = 23, NOT_EQUAL = 24, SMALLER_EQUAL = 25, GREATER_EQUAL = 26, 
+    SMALLER = 27, GREATER = 28, EQUAL = 29, CHAR = 30, INT = 31, FLOAT = 32, 
     UNIQUE = 33, DECIMAL_LITERAL = 34, STRING_LITERAL = 35, REAL_LITERAL = 36, 
     PRIMARY_KEY = 37, VALUES = 38, COMMA = 39, SEMICOLON = 40, DQUOTA_STRING = 41, 
     TOKEN = 42, ERROR_RECONGNIGION = 43
@@ -571,19 +571,80 @@ public:
   class  OpContext : public antlr4::ParserRuleContext {
   public:
     OpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *EQUAL();
-    antlr4::tree::TerminalNode *NOT_EQUAL();
-    antlr4::tree::TerminalNode *SMALLER();
-    antlr4::tree::TerminalNode *SMALLER_EQUAL();
-    antlr4::tree::TerminalNode *GREATER();
-    antlr4::tree::TerminalNode *GREATER_EQUAL();
+   
+    OpContext() = default;
+    void copyFrom(OpContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
 
+    virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  OpGTEContext : public OpContext {
+  public:
+    OpGTEContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *GREATER_EQUAL();
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+  };
+
+  class  OpEQContext : public OpContext {
+  public:
+    OpEQContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *EQUAL();
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  OpNEQContext : public OpContext {
+  public:
+    OpNEQContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *NOT_EQUAL();
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  OpGTContext : public OpContext {
+  public:
+    OpGTContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *GREATER();
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  OpLTEContext : public OpContext {
+  public:
+    OpLTEContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *SMALLER_EQUAL();
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  OpLTContext : public OpContext {
+  public:
+    OpLTContext(OpContext *ctx);
+
+    antlr4::tree::TerminalNode *SMALLER();
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
   OpContext* op();

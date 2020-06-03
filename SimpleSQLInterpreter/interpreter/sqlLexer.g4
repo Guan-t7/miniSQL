@@ -39,14 +39,14 @@ CLOSE_BRACKET: ')';
 
 //contidion
 WHERE: 'where';
-EQUAL: '=';
-NOT_EQUAL: '<>';
-SMALLER: '<';
-GREATER: '>';
-SMALLER_EQUAL: '<=';
-GREATER_EQUAL: '>=';
 AND: 'and';
 OR: 'or';
+NOT_EQUAL: '<>';
+SMALLER_EQUAL: '<=';
+GREATER_EQUAL: '>=';
+SMALLER: '<';
+GREATER: '>';
+EQUAL: '=';
 
 //type
 CHAR: 'char';

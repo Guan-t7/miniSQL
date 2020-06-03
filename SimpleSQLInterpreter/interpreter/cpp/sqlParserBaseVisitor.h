@@ -127,7 +127,27 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitOp(sqlParser::OpContext *ctx) override {
+  virtual antlrcpp::Any visitOpEQ(sqlParser::OpEQContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitOpNEQ(sqlParser::OpNEQContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitOpLT(sqlParser::OpLTContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitOpLTE(sqlParser::OpLTEContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitOpGT(sqlParser::OpGTContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitOpGTE(sqlParser::OpGTEContext *ctx) override {
     return visitChildren(ctx);
   }
 

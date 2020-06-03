@@ -66,7 +66,17 @@ public:
 
 	antlrcpp::Any visitLiteral(sqlParser::LiteralContext* ctx) override;
 
-	antlrcpp::Any visitOp(sqlParser::OpContext* ctx) override;
+	antlrcpp::Any visitOpEQ(sqlParser::OpEQContext* ctx) override;
+
+	antlrcpp::Any visitOpNEQ(sqlParser::OpNEQContext* ctx) override;
+
+	antlrcpp::Any visitOpLT(sqlParser::OpLTContext* ctx) override;
+
+	antlrcpp::Any visitOpLTE(sqlParser::OpLTEContext* ctx) override;
+
+	antlrcpp::Any visitOpGT(sqlParser::OpGTContext* ctx) override;
+
+	antlrcpp::Any visitOpGTE(sqlParser::OpGTEContext* ctx) override;
 
 	antlrcpp::Any visitCharTypeDef(sqlParser::CharTypeDefContext* ctx) override;;
 

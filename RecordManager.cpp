@@ -76,6 +76,7 @@ vector<vector<string>> RecordManager::select(string tableName, vector<Condition>
 			if (fit) res.push_back(vs_record);
 		}
 	}
+	return res;
 }
 int RecordManager::insert(string tableName, std::vector<std::string> s_vals)
 {
@@ -246,7 +247,7 @@ _DataType* RecordManager::mk_obj(std::pair<DataType, int>& type, const string & 
 		return new T_Type<int>(stoi(val));
 		break;
 	case FloatType:
-		return new T_Type<double>(stoi(val));
+		return new T_Type<double>(stod(val));
 		break;
 	case StringType:
 		return new _StringType(val);

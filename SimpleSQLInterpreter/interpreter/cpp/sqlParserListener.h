@@ -98,8 +98,23 @@ public:
   virtual void enterLiteral(sqlParser::LiteralContext *ctx) = 0;
   virtual void exitLiteral(sqlParser::LiteralContext *ctx) = 0;
 
-  virtual void enterOp(sqlParser::OpContext *ctx) = 0;
-  virtual void exitOp(sqlParser::OpContext *ctx) = 0;
+  virtual void enterOpEQ(sqlParser::OpEQContext *ctx) = 0;
+  virtual void exitOpEQ(sqlParser::OpEQContext *ctx) = 0;
+
+  virtual void enterOpNEQ(sqlParser::OpNEQContext *ctx) = 0;
+  virtual void exitOpNEQ(sqlParser::OpNEQContext *ctx) = 0;
+
+  virtual void enterOpLT(sqlParser::OpLTContext *ctx) = 0;
+  virtual void exitOpLT(sqlParser::OpLTContext *ctx) = 0;
+
+  virtual void enterOpLTE(sqlParser::OpLTEContext *ctx) = 0;
+  virtual void exitOpLTE(sqlParser::OpLTEContext *ctx) = 0;
+
+  virtual void enterOpGT(sqlParser::OpGTContext *ctx) = 0;
+  virtual void exitOpGT(sqlParser::OpGTContext *ctx) = 0;
+
+  virtual void enterOpGTE(sqlParser::OpGTEContext *ctx) = 0;
+  virtual void exitOpGTE(sqlParser::OpGTEContext *ctx) = 0;
 
   virtual void enterCharTypeDef(sqlParser::CharTypeDefContext *ctx) = 0;
   virtual void exitCharTypeDef(sqlParser::CharTypeDefContext *ctx) = 0;

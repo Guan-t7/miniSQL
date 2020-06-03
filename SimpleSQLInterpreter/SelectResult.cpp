@@ -20,3 +20,12 @@ std::string SelectResult::print() {
 		return QueryResult::print();
 	}
 }
+
+SelectResult::SelectResult(int v):QueryResult(v){
+}
+
+void SelectResult::setSuccess(TableInfo tableInfo, std::vector<std::vector<std::string>> data){
+	QueryResult::setSuccess(data.size());
+	this->tableInfo = std::move(tableInfo);
+	this->data = std::move(data);
+}

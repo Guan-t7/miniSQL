@@ -50,7 +50,7 @@ antlrcpp::Any SQLVisitor::visitWhereConditions(sqlParser::WhereConditionsContext
 }
 
 antlrcpp::Any SQLVisitor::visitWhereCondition(sqlParser::WhereConditionContext* ctx) {
-	Condition c{ ctx->columnName()->accept(this), ctx->literal()->accept(this), ctx->op()->accept(this) };
+	Condition c(ctx->columnName()->accept(this), ctx->op()->accept(this), ctx->literal()->accept(this));
 	return c;
 }
 
@@ -163,8 +163,28 @@ antlrcpp::Any SQLVisitor::visitLiteral(sqlParser::LiteralContext* ctx) {
 	return s;
 }
 
-antlrcpp::Any SQLVisitor::visitOp(sqlParser::OpContext* ctx) {
-	return ctx->getText();
+antlrcpp::Any SQLVisitor::visitOpEQ(sqlParser::OpEQContext* ctx) {
+	return opType::E;
+}
+
+antlrcpp::Any SQLVisitor::visitOpNEQ(sqlParser::OpNEQContext* ctx) {
+	return opType::NE;
+}
+
+antlrcpp::Any SQLVisitor::visitOpLT(sqlParser::OpLTContext* ctx) {
+	return opType::L;
+}
+
+antlrcpp::Any SQLVisitor::visitOpLTE(sqlParser::OpLTEContext* ctx) {
+	return opType::LE;
+}
+
+antlrcpp::Any SQLVisitor::visitOpGT(sqlParser::OpGTContext* ctx) {
+	return opType::G;
+}
+
+antlrcpp::Any SQLVisitor::visitOpGTE(sqlParser::OpGTEContext* ctx) {
+	return opType::GE;
 }
 
 antlrcpp::Any SQLVisitor::visitCharTypeDef(sqlParser::CharTypeDefContext* ctx) {
