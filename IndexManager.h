@@ -3,10 +3,8 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include "IndexInfo.h"
-#include "BPlusTree.h"
-#include "API.h"
 #include "BufferManager.h"
+#include "SimpleSQLInterpreter/DBInfo.h"
 
 class IndexManager {
 public:
