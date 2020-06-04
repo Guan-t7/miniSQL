@@ -11,5 +11,9 @@ public:
 	static QueryResult insertQuery(std::string tableName,std::vector<std::string>);
 	static QueryResult dropTableQuery(std::string tableName);
 	static QueryResult dropIndexQuery(std::string indexName);
+private:
+	static IndexInfo checkIndex(std::string tableName, std::string columnName);
+	static std::vector<IndexInfo> checkIndex(std::string tableName);
+	static int toIMType(std::pair<std::string, int> type);
 };
 

@@ -40,6 +40,9 @@
     <Filter Include="bufferManager">
       <UniqueIdentifier>{92c973a0-f806-4ab4-9ba8-770b4fb6c919}</UniqueIdentifier>
     </Filter>
+    <Filter Include="indexManager">
+      <UniqueIdentifier>{244d8e68-20f8-4ff0-8198-e76ab2d1ac81}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SQLVisitor.cpp">
@@ -150,6 +153,9 @@
     </ClInclude>
     <ClInclude Include="..\BufferManager.h">
       <Filter>bufferManager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IndexManager.h">
+      <Filter>indexManager</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

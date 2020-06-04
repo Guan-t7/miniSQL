@@ -6,6 +6,7 @@
 
 #include "CatalogManager.h"
 #include "error.h"
+#include "IndexManager.h"
 
 
 int validateDataType(std::string data, std::pair<std::string, int> type) {
@@ -37,6 +38,7 @@ int validateDataType(std::string data, std::pair<std::string, int> type) {
 }
 
 SelectResult DBExecutor::selectQuery(std::string tableName, std::vector<Condition> conds) {
+	/* TODO: use index*/
 	SelectResult result(SUCCESS);
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
@@ -50,12 +52,12 @@ SelectResult DBExecutor::selectQuery(std::string tableName, std::vector<Conditio
 		if ((ret = validateDataType(cond.val, refCol.type)) != SUCCESS) return ret;
 	}
 	RecordManager rm;
-	result.setSuccess(tableInfo,rm.select(tableName, conds));
+	result.setSuccess(tableInfo, rm.select(tableName, conds));
 	return result;
-	/*TODO: call index manager*/
 }
 
 QueryResult DBExecutor::deleteQuery(std::string tableName, std::vector<Condition> conds) {
+	/* TODO: use index*/
 	QueryResult result(SUCCESS);
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
@@ -71,7 +73,6 @@ QueryResult DBExecutor::deleteQuery(std::string tableName, std::vector<Condition
 	RecordManager rm;
 	result.setSuccess(rm.delete_rec(tableName, conds));
 	return result;
-	/*TODO: call index manager*/
 }
 
 QueryResult DBExecutor::createTableQuery(TableInfo info) {
@@ -80,9 +81,11 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	if (!tableInfo.name.empty()) return EXISTING_TABLE_NAME;
 	bool primaryKeyFound = false || info.primaryKey.empty();
 	std::set<std::string> usedName;
+	std::pair<std::string, int> ptype;
 	for (const auto& metadata : info.metadata) {
 		if (info.primaryKey == metadata.name) {
 			primaryKeyFound = true;
+			ptype = metadata.type;
 			if (!metadata.unique) {
 				return NON_UNIQUE_PRIMARY_KEY;
 			}
@@ -97,7 +100,15 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	}
 	if (primaryKeyFound) {
 		if (!info.primaryKey.empty()) {
-			/*TODO: call index manager*/
+			IndexInfo pi;
+			pi.columnName = info.primaryKey;
+			pi.indexName = info.name + "PKIndex";
+			pi.tableName = info.name;
+			IndexManager im;
+			im.createIndex(pi.indexName, pi.tableName, pi.columnName, toIMType(ptype));
+			auto indexInfos = CatalogManager::getIndex();
+			indexInfos.indexInfos.emplace_back(pi);
+			CatalogManager::updateIndex(indexInfos);
 		}
 	} else {
 		return UNKNOWN_PRIMARY_KEY;
@@ -118,10 +129,12 @@ QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
 	}
 	auto tableInfo = CatalogManager::getTableInfo(info.tableName);
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
-	if (std::any_of(tableInfo.metadata.begin(), tableInfo.metadata.end(),
-		[&info](const Column& i) {return i.name == info.columnName; })) {
+	auto pos = std::find_if(tableInfo.metadata.begin(), tableInfo.metadata.end(),
+		[&info](const Column& i) {return i.name == info.columnName; });
+	if (pos != tableInfo.metadata.end()) {
 		indexInfos.indexInfos.emplace_back(info);
-		/*TODO: call index manager*/
+		IndexManager im;
+		im.createIndex(info.indexName, info.tableName, info.columnName, toIMType(pos->type));
 		CatalogManager::updateIndex(indexInfos);
 	} else {
 		return NOT_EXISTING_COLUMN_NAME;
@@ -143,6 +156,7 @@ QueryResult DBExecutor::insertQuery(std::string tableName, std::vector<std::stri
 	}
 	RecordManager rm;
 	rm.insert(tableName, values);
+	auto indexInfos = checkIndex(tableName);
 	result.setSuccess(0);
 	return result;
 }
@@ -152,10 +166,16 @@ QueryResult DBExecutor::dropTableQuery(std::string tableName) {
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
 	auto indexInfo = CatalogManager::getIndex();
-	indexInfo.indexInfos.erase(std::remove_if(indexInfo.indexInfos.begin(), indexInfo.indexInfos.end(),
-		[&tableName](const IndexInfo& info) {return info.tableName == tableName; }), indexInfo.indexInfos.end());
+	IndexManager im;
+	for (auto iter = indexInfo.indexInfos.begin(); iter != indexInfo.indexInfos.end();) {
+		if (iter->tableName == tableName) {
+			im.dropIndex(iter->indexName);
+			iter = indexInfo.indexInfos.erase(iter);
+		} else {
+			++iter;
+		}
+	}
 	CatalogManager::updateIndex(indexInfo);
-	/*TODO: call index manager*/
 	CatalogManager::dropTable(tableName);
 	RecordManager rm;
 	rm.drop_table(tableName);
@@ -172,8 +192,32 @@ QueryResult DBExecutor::dropIndexQuery(std::string indexName) {
 		return NOT_EXISTING_INDEX_NAME;
 	}
 	indexInfos.indexInfos.erase(pos);
-	/*TODO: call index manager*/
+	IndexManager im;
+	im.dropIndex(indexName);
 	CatalogManager::updateIndex(indexInfos);
 	result.setSuccess(0);
 	return result;
+}
+
+IndexInfo DBExecutor::checkIndex(std::string tableName, std::string columnName) {
+	auto indexInfos = CatalogManager::getIndex();
+	for (auto index : indexInfos.indexInfos) {
+		if (index.columnName == columnName && index.tableName == tableName) return index;
+	}
+	return {};
+}
+
+std::vector<IndexInfo> DBExecutor::checkIndex(std::string tableName) {
+	std::vector<IndexInfo> infos;
+	auto indexInfos = CatalogManager::getIndex();
+	for (auto index : indexInfos.indexInfos) {
+		if (index.tableName == tableName) infos.emplace_back(index);
+	}
+	return infos;
+}
+
+int toIMType(std::pair<std::string, int> type) {
+	if (type.first == "int") return IndexManager::TYPE_INT;
+	if (type.first == "float") return IndexManager::TYPE_FLOAT;
+	return type.second;
 }
