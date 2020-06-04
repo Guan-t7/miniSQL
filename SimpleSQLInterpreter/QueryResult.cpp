@@ -7,6 +7,9 @@ QueryResult::QueryResult() {
 }
 
 QueryResult::QueryResult(int c):Result(c){
+	startTime = std::chrono::system_clock::now();
+	count = 0;
+	duration = 0;
 }
 
 void QueryResult::setSuccess(int cnt) {

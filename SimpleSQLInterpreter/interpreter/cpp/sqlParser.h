@@ -390,8 +390,8 @@ public:
 
     ColumnNameContext *columnName();
     TypeContext *type();
-    antlr4::tree::TerminalNode *COMMA();
     antlr4::tree::TerminalNode *UNIQUE();
+    antlr4::tree::TerminalNode *COMMA();
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 

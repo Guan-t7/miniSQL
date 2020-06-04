@@ -32,7 +32,7 @@ int validateDataType(std::string data, std::pair<std::string, int> type) {
 	if (type.first == "char") {
 		if (data.size() > type.second) success = false;
 	}
-	if (success == false) return TOO_LONG_STRING;
+	if (success == false) return MAX_CHAR_LENGTH_EXCEEDED;
 	return SUCCESS;
 }
 
@@ -105,6 +105,7 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	RecordManager rm;
 	rm.create_table(info.name);
 	CatalogManager::updateTableInfo(info);
+	result.setSuccess(0);
 	return result;
 }
 
@@ -125,6 +126,7 @@ QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
 	} else {
 		return NOT_EXISTING_COLUMN_NAME;
 	}
+	result.setSuccess(0);
 	return result;
 }
 
@@ -141,6 +143,7 @@ QueryResult DBExecutor::insertQuery(std::string tableName, std::vector<std::stri
 	}
 	RecordManager rm;
 	rm.insert(tableName, values);
+	result.setSuccess(0);
 	return result;
 }
 
@@ -156,6 +159,7 @@ QueryResult DBExecutor::dropTableQuery(std::string tableName) {
 	CatalogManager::dropTable(tableName);
 	RecordManager rm;
 	rm.drop_table(tableName);
+	result.setSuccess(0);
 	return result;
 }
 
@@ -170,5 +174,6 @@ QueryResult DBExecutor::dropIndexQuery(std::string indexName) {
 	indexInfos.indexInfos.erase(pos);
 	/*TODO: call index manager*/
 	CatalogManager::updateIndex(indexInfos);
+	result.setSuccess(0);
 	return result;
 }

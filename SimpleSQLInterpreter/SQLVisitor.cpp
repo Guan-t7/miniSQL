@@ -2,19 +2,31 @@
 
 antlrcpp::Any SQLVisitor::visitRoot(sqlParser::RootContext* ctx) {
 	//int
-	return visitChildren(ctx);
+	for (auto child : ctx->children) {
+		auto result = child->accept(this);
+		if (result.isNotNull()) {
+			if (result.as<int>() != SUCCESS) return result;
+		}
+	}
+	return SUCCESS;
 }
 
 antlrcpp::Any SQLVisitor::visitSqlStatements(sqlParser::SqlStatementsContext* ctx) {
 	for (auto child : ctx->children) {
-		const int result = child->accept(this);
-		if (result != SUCCESS) return result;
+		auto result = child->accept(this);
+		if (result.isNotNull()) {
+			if (result.as<int>() != SUCCESS) return result;
+		}
 	}
 	return SUCCESS;
 }
 
 antlrcpp::Any SQLVisitor::visitSqlStatement(sqlParser::SqlStatementContext* ctx) {
-	return visitChildren(ctx);
+	for (auto child : ctx->children) {
+		const int result = child->accept(this);
+		if (result != SUCCESS) return result;
+	}
+	return SUCCESS;
 }
 
 antlrcpp::Any SQLVisitor::visitEmptyStatement(sqlParser::EmptyStatementContext* ctx) {
@@ -122,7 +134,10 @@ antlrcpp::Any SQLVisitor::visitInsertQuery(sqlParser::InsertQueryContext* ctx) {
 antlrcpp::Any SQLVisitor::visitLiteralValues(sqlParser::LiteralValuesContext* ctx) {
 	std::vector<std::string> values;
 	for (auto child : ctx->children) {
-		values.emplace_back(child->accept(this).as<std::string>());
+		auto result = child->accept(this);
+		if (result.isNotNull()) {
+			values.emplace_back(result.as<std::string>());
+		}
 	}
 	return values;
 }
