@@ -1,6 +1,7 @@
 create table Foo(
-    i int,
+    i int unique,
     f float,
     c char (10 ),
     primary key ( i)
 );
+insert into Foo values(1,1.0,"foo");

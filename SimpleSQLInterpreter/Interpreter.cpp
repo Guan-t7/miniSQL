@@ -33,11 +33,11 @@ int Interpreter::mainLoop() {
 
 void Interpreter::handleResult(int result) {
 	switch (result) {
-	case NOT_EXISTING_TABLE_NAME:
-		std::cout << "Not existing table name" << std::endl;
-		break;
 	case UNKNOWN_ERROE_WHEN_PARSING:
 		//Should be handled by error listener
+		break;
+	case NOT_EXISTING_TABLE_NAME:
+		std::cout << "Not existing table name" << std::endl;
 		break;
 	case EXISTING_TABLE_NAME:
 		std::cout << "Existing table name" << std::endl;
@@ -54,6 +54,9 @@ void Interpreter::handleResult(int result) {
 	case EXISTING_INDEX_NAME:
 		std::cout << "Existing index name" << std::endl;
 		break;
+	case NON_UNIQUE_PRIMARY_KEY:
+		std::cout << "Primary key has to be unique" << std::endl;
+		break;
 	case MAX_CHAR_LENGTH_EXCEEDED:
 		std::cout << "Max char length exceeded" << std::endl;
 		break;
@@ -62,6 +65,12 @@ void Interpreter::handleResult(int result) {
 		break;
 	case DELETE_TABLE_FAILED:
 		std::cout << "Delete table failed" << std::endl;
+		break;
+	case WRONG_VALUE_COUNT:
+		std::cout << "Too many or too few values" << std::endl;
+		break;
+	case BAD_VALUE:
+		std::cout << "Bad value" << std::endl;
 		break;
 	case SUCCESS:
 		//OK, nothing happens

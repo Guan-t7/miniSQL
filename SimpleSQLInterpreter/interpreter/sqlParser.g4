@@ -51,7 +51,7 @@ columnDefinitions: columnDefinition+;
 
 columnDefinition:
 	columnName type COMMA #nonUniqueColumnDefinition
-	| columnName type COMMA UNIQUE #uniqueColumnDefinition;
+	| columnName type UNIQUE COMMA #uniqueColumnDefinition;
 
 primaryKeyDefinition:
 	PRIMARY_KEY OPEN_BRACKET columnName CLOSE_BRACKET;
