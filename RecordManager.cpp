@@ -89,7 +89,7 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals)
 		auto &&col = cm.getTableInfo(tableName).metadata[i];
 		if (col.unique)
 		{
-			conds.emplace_back(Condition(col.name, E, s_vals[i]));
+			conds.emplace_back(Condition(col.name, opType::E, s_vals[i]));
 		}
 	}
 	if (!select(tableName, conds).empty()) return 1;
@@ -193,27 +193,34 @@ int RecordManager::delete_rec(string tableName, vector<Condition> conds)
 	return count;
 }
 
+pair<DataType, int> eType(pair<std::string, int> type)
+{
+	if (type.first == "int") return make_pair(IntType, 0);
+	else if (type.first == "float") return make_pair(FloatType, 0);
+	else return make_pair(StringType, type.second);
+}
+
 bool RecordManager::cond_fit(Condition & c, _DataType *data, _DataType * cond_val)
 {
 	bool fit = true;
 	switch (c.op)
 	{
-	case E:
+	case opType::E:
 		if (!(*data == *cond_val)) fit = false;
 		break;
-	case NE:
+	case opType::NE:
 		if (*data == *cond_val) fit = false;
 		break;
-	case L:
+	case opType::L:
 		if (!(*data < *cond_val)) fit = false;
 		break;
-	case GE:
+	case opType::GE:
 		if (*data < *cond_val) fit = false;
 		break;
-	case G:
+	case opType::G:
 		if (*data < *cond_val || *data == *cond_val) fit = false;
 		break;
-	case LE:
+	case opType::LE:
 		if (!(*data < *cond_val || *data == *cond_val)) fit = false;
 		break;
 	default:

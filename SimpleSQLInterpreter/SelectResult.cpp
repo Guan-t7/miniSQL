@@ -29,3 +29,17 @@ void SelectResult::setSuccess(TableInfo tableInfo, std::vector<std::vector<std::
 	this->tableInfo = std::move(tableInfo);
 	this->data = std::move(data);
 }
+
+std::string to_string(opType e)
+{
+	switch (e)
+	{
+	case opType::E: return "E";
+	case opType::NE: return "NE";
+	case opType::L: return "L";
+	case opType::G: return "G";
+	case opType::LE: return "LE";
+	case opType::GE: return "GE";
+	default: return "unknown";
+	}
+}

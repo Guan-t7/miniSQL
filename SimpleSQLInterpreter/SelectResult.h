@@ -13,7 +13,9 @@ private:
 	std::vector<std::vector<std::string>> data;
 };
 
-enum opType { E, NE, L, G, LE, GE } op; // rel_op, ref. x86 asm
+enum class opType { E, NE, L, G, LE, GE };
+
+std::string to_string(opType e); // rel_op, ref. x86 asm
 struct Condition {
 	std::string col, val;
 	opType op;

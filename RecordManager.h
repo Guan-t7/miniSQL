@@ -74,9 +74,4 @@ public:
 
 
 //todo bad interface
-pair<DataType, int> eType(pair<std::string, int> type)
-{
-	if (type.first == "int") return make_pair(IntType, 0);
-	else if (type.first == "float") return make_pair(FloatType, 0);
-	else return make_pair(StringType, type.second);
-}
+pair<DataType, int> eType(pair<std::string, int> type);

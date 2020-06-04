@@ -5,6 +5,8 @@
 // use read() and write()
 // mmap/CreateFileMapping is platform-specific
 
+BufferManager BufferManager::bm;
+
 struct Buf_Page
 {
 	bool dirty;
