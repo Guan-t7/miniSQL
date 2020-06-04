@@ -31,13 +31,16 @@ private:
 	_DataType * mk_obj(std::pair<DataType, int>& type, const string& val);
 	bool cond_fit(Condition & c, _DataType * data, _DataType * cond_val);
 	void insert_page(std::string & tableName, size_t i, unsigned int rec_size, _DataType * dataArr[]);
+	vector<p_Entry> sel_(string tableName, vector<Condition> conds, vector<p_Entry> hint);
+
 public:
 	RecordManager();
 	~RecordManager();
 	// 0 for success
 	int create_table(string tableName); 
-	int drop_table(string tableName); //? whose duty to validate tableName
+	int drop_table(string tableName);
 	vector<vector<string>> select (string tableName, vector<Condition> conds); //? Column是否能保证字段的顺序
+		// vector<vector<string>> select (const string &tableName, const vector<Condition> &conds);
 	int insert(string tableName, std::vector<std::string> s_vals); 	//todo I have p_Entry for index insert
 	//! this one returns count of records deleted
 	int delete_rec(string tableName, vector<Condition> conds);
@@ -72,6 +75,4 @@ public:
 };
 
 
-
-//todo bad interface
 pair<DataType, int> eType(pair<std::string, int> type);

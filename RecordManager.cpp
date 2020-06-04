@@ -1,7 +1,7 @@
 #include "RecordManager.h"
 #include "pch.h"
 
-//todo 内存管理
+//todo 内存管理；重构sel 配置参数以支持index；del重构；懒惰删除配插空
 RecordManager::RecordManager() : bm(BufferManager::instance())
 {
 }
