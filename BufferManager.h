@@ -52,6 +52,7 @@ public:
 	~BufferManager();
 	const void* getPage_r(p_Page p);
 	void* getPage_w(p_Page p);
+	void set_dirty(p_Page p);
 	unsigned totalPages(string filename);
 	// int: 0 on success below
 	int pinPage(p_Page p);	// may FAIL if u pin too many

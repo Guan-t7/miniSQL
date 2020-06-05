@@ -109,6 +109,11 @@ void * BufferManager::getPage_w(p_Page p)
 	return pages[p].m;
 }
 
+void BufferManager::set_dirty(p_Page p)
+{
+	if (pages.count(p)) pages[p].dirty = true;
+}
+
 unsigned BufferManager::totalPages(string filename)
 {
 	if (_totalPages.count(filename))
