@@ -1,7 +1,7 @@
 #include "RecordManager.h"
 #include "pch.h"
 
-//todo 内存管理；重构sel 配置参数以支持index；del重构；懒惰删除配插空
+//todo 内存管理；index；
 RecordManager::RecordManager() : bm(BufferManager::instance())
 {
 }
@@ -22,7 +22,7 @@ int RecordManager::drop_table(string tableName)
 
 struct Entry
 {
-	unsigned offs_start;
+	unsigned offs2start;
 	unsigned short size;
 	bool valid;
 	//todo null bitmap
@@ -31,54 +31,21 @@ struct Sl_Pg_Head
 {
 	unsigned n_entries;
 	unsigned end_fspace; // 页内的free space是[第n_entries项 Entry, end_fspace)
-	Entry en;
+	Entry ent;
+	void init() { n_entries = 0; end_fspace = SIZEOF_PAGE; }
 };
 
 // access and manip the storage; do comp in certain field
-// full table scan
 // 从……获得table的模式信息：比如一条记录各field的类型和大小
 // 对table中的每个Page，对Page中的每条record 进行parse
 // 从……得到查询条件
-vector<vector<string>> RecordManager::select(string tableName, vector<Condition> conds) //todo 如何运用索引
+vector<vector<string>> RecordManager::select(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
 {
-	int n_pages = bm.totalPages(tableName + ".mdbf");
-	vector<vector<string>> res;
-	for (size_t i = 0; i < n_pages; i++) // trav each page
-	{
-		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", i)); // ptr pointing to mem loc
-		const Sl_Pg_Head* mp_slPage = static_cast<const Sl_Pg_Head*> (mp_pg);
-		const Entry* mp_entry = &mp_slPage->en;
-		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // get one record
-		{
-			if (!mp_entry->valid) continue;
-			const void *mp_record = static_cast<const char*> (mp_pg) + mp_entry->offs_start;
-
-			vector<string> vs_record;
-			bool fit = true;
-			for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size() && fit; i++) // get each field
-			{
-				auto &&col = cm.getTableInfo(tableName).metadata[i];
-				pair<DataType, int> type = eType(col.type);
-				_DataType *data = mk_obj(type, mp_record);
-				vs_record.push_back(data->to_string());
-				// check conds
-				for (auto&& c : conds)
-				{
-					if (c.col == col.name)
-					{
-						_DataType* cond_val = mk_obj(type, c.val);
-						fit = cond_fit(c, data, cond_val);
-						if (!fit) break;
-					}
-				}
-				mp_record = (const char*)mp_record + data->size(); // step to next field
-			}
-			if (fit) res.push_back(vs_record);
-		}
-	}
-	return res;
+	if (candidates.empty()) return to_print(tableName, full_table_scan(tableName, conds));
+	else return to_print(tableName, range_scan(tableName, conds, candidates));
 }
-int RecordManager::insert(string tableName, std::vector<std::string> s_vals)
+
+int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //todo I'm still not satisfied
 {
 	// access
 	unsigned n_pages = bm.totalPages(tableName + ".mdbf");
@@ -92,7 +59,7 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals)
 			conds.emplace_back(Condition(col.name, opType::E, s_vals[i]));
 		}
 	}
-	if (!select(tableName, conds).empty()) return 1;
+	if (!select(tableName, conds).empty()) return 1; //todo 调api
 	// Field对象构造出来，同时确定记录长度
 	unsigned rec_size = 0;
 	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
@@ -104,93 +71,143 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals)
 		rec_size += dataArr[i]->size();
 	}
 	// trav each page
-	for (size_t i = 0; i < n_pages; i++) 
+	for (size_t pageNum = 0; pageNum < n_pages; pageNum++)
 	{
-		// 确认该页有没有足够的空当
-		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", i)); // ptr pointing to mem loc
-		const Sl_Pg_Head* mp_slPage = static_cast<const Sl_Pg_Head*> (mp_pg);
-		const Entry* mp_entry = &mp_slPage->en;
-		
-		unsigned space_left = mp_slPage->end_fspace - ((const char*)(mp_entry + mp_slPage->n_entries) - (const char*)mp_pg);
-		if (space_left > rec_size + sizeof(Entry)) // begin w
+		// 看该页可有被懒惰删除的项
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // ptr pointing to mem loc
+		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
+		const Entry* mp_entry = &mp_slPage->ent;
+
+		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
 		{
-			insert_page(tableName, i, rec_size, dataArr);
+			if (!mp_entry->valid && mp_entry->size > rec_size) // 被懒惰删除的项 可用
+			{
+				bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
+				const_cast<Entry*>(mp_entry)->size = rec_size;
+				dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
+				// todo inform index 
+				return 0;
+			}
+		}
+		// 没有被懒惰删除的项。看有没有足够的空当
+		unsigned space_left = mp_slPage->end_fspace - ((char*)mp_entry - (char*)mp_pg);
+		if (space_left > rec_size + sizeof(Entry)) // new entry
+		{
+			insert2newEntry(tableName, pageNum, rec_size, dataArr);
 		}
 	}
-	// get a new page
+	// get a new page and init
 	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", n_pages));
-	// init
-	Sl_Pg_Head* mp_slPage = static_cast<Sl_Pg_Head*> (mp_pg);
-	mp_slPage->n_entries = 0;
-	mp_slPage->end_fspace = SIZEOF_PAGE;
+	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
+	mp_slPage->init();
 	// insert to this page
-	insert_page(tableName, n_pages, rec_size, dataArr);
-	
+	insert2newEntry(tableName, n_pages, rec_size, dataArr);
+
 	return 0;
 }
 
-void RecordManager::insert_page(std::string &tableName, size_t i, unsigned int rec_size, _DataType * dataArr[])
+
+
+
+void RecordManager::dump_rec(char * mp_record, const _DataType * dataArr[], unsigned n)
 {
-	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", i));
-	Sl_Pg_Head* mp_slPage = static_cast<Sl_Pg_Head*> (mp_pg);
-	mp_slPage->n_entries++;
-	mp_slPage->end_fspace -= rec_size;
-
-	Entry* mp_entry = &mp_slPage->en;
-	mp_entry[mp_slPage->n_entries].offs_start = mp_slPage->end_fspace;
-	mp_entry[mp_slPage->n_entries].size = rec_size;
-	mp_entry[mp_slPage->n_entries].valid = true;
-
-	char* mp_record = (char*)mp_pg + mp_entry[mp_slPage->n_entries].offs_start;
-	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
+	for (size_t i = 0; i < n; i++)
 	{
 		dataArr[i]->dump(mp_record);
 		mp_record += dataArr[i]->size();
 	}
 }
 
-int RecordManager::delete_rec(string tableName, vector<Condition> conds)
+void RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * dataArr[])
 {
-	int count = 0;
-	// access
-	int n_pages = bm.totalPages(tableName + ".mdbf");
-	for (size_t i = 0; i < n_pages; i++) // trav each page
-	{
-		void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", i)); // ptr pointing to mem loc
-		//todo refactor for extraction 先读，确认后再申请写
-		Sl_Pg_Head* mp_slPage = static_cast<Sl_Pg_Head*> (mp_pg);
-		Entry* mp_entry = &mp_slPage->en;
-		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // get one record
-		{
-			if (!mp_entry->valid) continue; //? n_entries inconsistency
-			const void *mp_record = static_cast<const char*> (mp_pg) + mp_entry->offs_start;
+	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", i));
+	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
+	mp_slPage->end_fspace -= rec_size;
 
-			bool fit = true;
-			for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size() && fit; i++) // get each field
-			{
-				auto &&col = cm.getTableInfo(tableName).metadata[i];
-				pair<DataType, int> type = eType(col.type);
-				_DataType *data = mk_obj(type, mp_record);
-				// check conds
-				for (auto&& c : conds)
-				{
-					if (c.col == col.name)
-					{
-						_DataType* cond_val = mk_obj(type, c.val);
-						fit = cond_fit(c, data, cond_val);
-						if (!fit) break;
-					}
-				}
-				mp_record = (const char*)mp_record + data->size(); // step to next field
-			}
-			if (fit)
-			{
-				mp_entry->valid = false; //todo real deletion
-				count++;
-			}
+	Entry* mp_entry = &mp_slPage->ent;
+	mp_entry[mp_slPage->n_entries].offs2start = mp_slPage->end_fspace;
+	mp_entry[mp_slPage->n_entries].size = rec_size;
+	mp_entry[mp_slPage->n_entries].valid = true;
+
+	char* mp_record = (char*)mp_pg + mp_entry[mp_slPage->n_entries].offs2start;
+	dump_rec(mp_record, dataArr, cm.getTableInfo(tableName).metadata.size());
+	mp_slPage->n_entries++;
+	//todo inform index
+}
+
+
+
+vector<p_Entry> RecordManager::range_scan(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
+{
+	vector<p_Entry> res;
+	for (auto&& candidate : candidates)
+	{
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", get<0>(candidate)));
+		const Entry* mp_entry = reinterpret_cast<const Entry*>((const char*)mp_pg + get<1>(candidate));
+		const void *mp_record = (const char*)mp_pg + mp_entry->offs2start;
+		bool fit = conds_fit(cm.getTableInfo(tableName).metadata, mp_record, conds);
+		if (fit) res.push_back(candidate);
+	}
+	return res;
+}
+vector<p_Entry> RecordManager::full_table_scan(const string & tableName, const vector<Condition>& conds)
+{
+	vector<p_Entry> res;
+	for (size_t pageNum = 0; pageNum < bm.totalPages(tableName + ".mdbf"); pageNum++) // trav each page
+	{
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // mp: ptr pointing to mem loc
+		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
+		const Entry* mp_entry = &mp_slPage->ent;
+		for (size_t i = 0; i < mp_slPage->n_entries && mp_entry->valid; i++, mp_entry++) // trav each record in the page
+		{
+			const void *mp_record = (const char*)mp_pg + mp_entry->offs2start; // ptr to the start of this record
+			bool fit = conds_fit(cm.getTableInfo(tableName).metadata, mp_record, conds);
+			if (fit) res.push_back(p_Entry{ pageNum,(const char*)mp_entry - (const char*)mp_pg });
 		}
 	}
-	return count;
+	return res;
+}
+
+vector<vector<string>> RecordManager::to_print(const string & tableName, const vector<p_Entry>& list)
+{
+	vector<vector<string>> res;
+	for (auto&& ent : list)
+	{
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", get<0>(ent)));
+		const Entry* mp_entry = reinterpret_cast<const Entry*>((const char*)mp_pg + get<1>(ent));
+		const void *mp_record = (const char*)mp_pg + mp_entry->offs2start;
+		vector<string> vs_record;
+		for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++) // get each field
+		{
+			auto &&col = cm.getTableInfo(tableName).metadata[i];
+			pair<DataType, int> type = eType(col.type);
+			_DataType *data = mk_obj(type, mp_record);
+			vs_record.push_back(data->to_string());
+			mp_record = (const char*)mp_record + data->size(); // step to next field
+		}
+		res.push_back(vs_record);
+	}
+	return res;
+}
+
+void RecordManager::set_invalid(const string & tableName, const vector<p_Entry>& list)
+{
+	for (auto&& ent : list)
+	{
+		void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", get<0>(ent)));
+		Entry* mp_entry = reinterpret_cast<Entry*>((char*)mp_pg + get<1>(ent));
+		mp_entry->valid = false;
+	}
+}
+int RecordManager::delete_rec(string tableName, vector<Condition> conds, const vector<p_Entry>& candidates)
+{
+	vector<p_Entry> list;
+	if (candidates.empty())
+		list = move(full_table_scan(tableName, conds));
+	else
+		list = move(range_scan(tableName, conds, candidates));
+	set_invalid(tableName, list);
+	return list.size();
 }
 
 pair<DataType, int> eType(pair<std::string, int> type)
@@ -200,7 +217,28 @@ pair<DataType, int> eType(pair<std::string, int> type)
 	else return make_pair(StringType, type.second);
 }
 
-bool RecordManager::cond_fit(Condition & c, _DataType *data, _DataType * cond_val)
+bool RecordManager::conds_fit(const vector<Column> & colMetas, const void * mp_record, const std::vector<Condition> & conds)
+{
+	bool fit = true;
+	for (size_t i = 0; i < colMetas.size() && fit; i++) // get each field
+	{
+		auto &&colMeta = colMetas[i];
+		pair<DataType, int> type = eType(colMeta.type);
+		_DataType* data = mk_obj(type, mp_record); // construct data from void*
+		for (auto&& cond : conds) // check conds
+		{
+			if (cond.col == colMeta.name)
+			{
+				_DataType* cond_val = mk_obj(type, cond.val);
+				fit = cond_fit(cond, data, cond_val);
+				if (!fit) break;
+			}
+		}
+		mp_record = (const char*)mp_record + data->size(); // step to next field
+	}
+	return fit;
+}
+bool RecordManager::cond_fit(const Condition & c, const _DataType *data, const _DataType * cond_val)
 {
 	bool fit = true;
 	switch (c.op)
@@ -264,4 +302,3 @@ _DataType* RecordManager::mk_obj(std::pair<DataType, int>& type, const string & 
 		break;
 	}
 }
-//? UNTESTED

@@ -1,5 +1,6 @@
 #pragma once
 #include "BufferManager.h"
+#include "IndexManager.h"
 #include "SimpleSQLInterpreter/DBInfo.h"
 #include "SimpleSQLInterpreter/CatalogManager.h"
 #include "SimpleSQLInterpreter/SelectResult.h"
@@ -26,12 +27,18 @@ class RecordManager
 private:
 	BufferManager& bm;
 	CatalogManager cm;
+	IndexManager im;
 
 	_DataType * mk_obj(std::pair<DataType, int>& type, const void * mp_record);
 	_DataType * mk_obj(std::pair<DataType, int>& type, const string& val);
-	bool cond_fit(Condition & c, _DataType * data, _DataType * cond_val);
-	void insert_page(std::string & tableName, size_t i, unsigned int rec_size, _DataType * dataArr[]);
-	vector<p_Entry> sel_(string tableName, vector<Condition> conds, vector<p_Entry> hint);
+	bool conds_fit(const vector<Column>& colMetas, const void * mp_record, const std::vector<Condition>& conds);
+	bool cond_fit(const Condition & c, const _DataType *data, const _DataType * cond_val);
+	void dump_rec(char* mp_record, const _DataType * dataArr[], unsigned n);
+	void insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * dataArr[]);
+	vector<p_Entry> range_scan(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates);
+	vector<p_Entry> full_table_scan(const string & tableName, const vector<Condition>& conds);
+	vector<vector<string>> to_print(const string &tableName, const vector<p_Entry> &list);
+	void set_invalid(const string &tableName, const vector<p_Entry> &list);
 
 public:
 	RecordManager();
@@ -39,11 +46,11 @@ public:
 	// 0 for success
 	int create_table(string tableName); 
 	int drop_table(string tableName);
-	vector<vector<string>> select (string tableName, vector<Condition> conds); //? Column是否能保证字段的顺序
-		// vector<vector<string>> select (const string &tableName, const vector<Condition> &conds);
+	// no candidates: full table scan; otherwise index range scan
+	vector<vector<string>> select(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates = vector<p_Entry>{});
 	int insert(string tableName, std::vector<std::string> s_vals); 	//todo I have p_Entry for index insert
 	//! this one returns count of records deleted
-	int delete_rec(string tableName, vector<Condition> conds);
+	int delete_rec(string tableName, vector<Condition> conds, const vector<p_Entry> &candidates = vector<p_Entry>{}); //todo index del
 };
 
 
