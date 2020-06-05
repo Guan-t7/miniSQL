@@ -1,74 +1,72 @@
 #pragma once
-#include <stdio.h>
-#include <map>
-#include <string>
-#include <sstream>
-#include "BufferManager.h"
-#include "SimpleSQLInterpreter/DBInfo.h"
+#include<string>
+#include<cstdio>
+#include<iostream>
+#include<map>
+#include<vector>
+#include<sstream>
+#include"BPlusTree.h"
+#include"API.h"
+#include"BufferManager.h"
 
-class IndexManager {
+
+using namespace std;
+
+typedef char* value;
+
+struct IndexInfo
+{
 public:
-	int static const TYPE_FLOAT = 0;
-	int static const TYPE_INT = -1;
-	//其他数字代表char及其长度，例如10代表char(10)
-	map<int, IndexInfo*> indexMap;
+	//type表示数据类型，-1为int，0为float，1-255为char
+	int Type;
+	string IndexName;
+	string TableName;
+	string Attribute;
+	void* BTree;
+};
+
+class IndexManager
+{
+public:
+	struct convert{
+		int inttype;
+		float floattype;
+		string stringtype;
+	}ck;
 	
-	//转换输入的数据
-	struct keyTmp {
-		int intTmp;
-		float floatTmp;
-		string stringTmp;
-	} kt;
-
-	//获取B+树degree
-	int getDegree(int type);
-
-	//获取节点的key
-	int getKeySize(int type);
-
-	void setKey(int type, string key);
+	map<int, IndexInfo*> IndexMap;
 
 
-public:
+IndexManager();
+
+~IndexManager();
 
 
-	// 创建/读取index，生成空树
-	IndexManager();
 
-	~IndexManager();
-
-	void* createIndex(string indexName,string tableName, string Attribute ,int type);
-
-	int dropIndex(string indexName);
-
-	void* getIndex(string indexName);
-
-	value searchValue(string indexName, string key, int type);
-
-	vector<value> searchValueConditional(string indexName, string key, int type, int direction);
-
-	void insertIndex(string indexName, string key, value recordAddress, int type);
-
-	void deleteIndexByKey(string indexName, string key, int type);
-
-	void updateIndex(string indexName, string key, value recordAddress,int type);
+void* IndexManager::CreateIndex(int Type, string IndexName, string TableName, string Attribute);
 
 
-	//从buffer读取index
-	void loadIndexInfos();
-	//将index写入buffer
-	int writeIndexInfosintoBuffer();
+int IndexManager::DropIndex(string IndexName);
 
-	void showallIndexs() {
-		map<int, IndexInfo*>::iterator it;
-		for (it = indexMap.begin(); it != indexMap.end(); it++) {
 
-			cout << "IndexName"<<it->second->indexName << endl;
-			if (it->second->type == -1) {
-				BTree<int>* bt;
-				bt = (BTree<int>*)it->second->Tree;
-			}
-		}
-	}
+ConvertKey(int Type, string Key);
 
+
+void* IndexManager::GetIndex(string IndexName);
+
+
+value IndexManager::IndexSearch(int Type,string IndexName, string Key);
+
+
+//Conditon 0为小于 1为小于等于 2为大于 3为大于等于
+vector<value> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
+
+
+IndexInsertion(int Type, string IndexName, string Key,value Address);
+
+
+IndexDeletion(int Type, string IndexName, string Key);
+
+
+IndexUpdate(int Type, string IndexName, string Key, value Address);
 };
