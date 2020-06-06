@@ -1,3 +1,8 @@
 Debug
 x64
 .vs
+/miniSQL.vcxproj.user
+/miniSQL.vcxproj.filters
+/miniSQL.vcxproj
+/miniSQL.sln
+/.gitattributes

@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 using namespace std;
+#define DEBUG
 
 // buffer 由如下参数的 Pages 构成
 const unsigned SIZEOF_PAGE = 4096;	//? make it bigger?
