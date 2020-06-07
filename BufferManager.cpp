@@ -71,7 +71,7 @@ Buf_Page & BufferManager::read_file(p_Page p)
 	string &filename = get<0>(p);
 	unsigned pageNum = get<1>(p);
 	// test file size. inflate the file if needed.
-	fstream fin(filename, std::ios::binary | std::ios::ate);
+	fstream fin(filename, ios::binary | ios::in | ios::out | ios::ate); //! bug: missing bit masks 
 	if (fin.tellg() / SIZEOF_PAGE < (pageNum + 1))
 	{
 		fin.seekp(2 * (pageNum + 1)*SIZEOF_PAGE - 1);
@@ -88,7 +88,7 @@ Buf_Page & BufferManager::read_file(p_Page p)
 
 void BufferManager::writeback_file(p_Page p)
 {
-	ofstream fout(get<0>(p));
+	ofstream fout(get<0>(p), ios::binary | ios::in | ios::out); //! bug: missing bit masks
 	fout.seekp(get<1>(p) * SIZEOF_PAGE);
 	fout.write(static_cast<char*>(pages[p].m), SIZEOF_PAGE);
 	pages[p].dirty = false;

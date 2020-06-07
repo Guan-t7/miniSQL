@@ -59,3 +59,5 @@ public:
 	int delete_file(string filename);
 	void flush();	// write back all dirty pages to disk: sync the changes
 };
+
+#undef DEBUG
