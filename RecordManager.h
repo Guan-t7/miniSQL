@@ -49,8 +49,8 @@ public:
 	vector<vector<string>> select(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates = vector<p_Entry>{});
 	int insert(string tableName, std::vector<std::string> s_vals); 	// 0 for success
 	//todo I have p_Entry for index insert
-	//! this one returns count of records deleted
-	int delete_rec(string tableName, vector<Condition> conds, const vector<p_Entry> &candidates = vector<p_Entry>{}); //todo index del
+	int delete_rec(string tableName, vector<Condition> conds, const vector<p_Entry> &candidates = vector<p_Entry>{}); //! this one returns count of records deleted
+	//todo index del
 };
 
 
