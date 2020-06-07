@@ -3,14 +3,25 @@
 std::string SelectResult::print() {
 	std::string s{};
 	if (getStatus() == 0) {
-		for (auto& i : tableInfo.metadata) {
-			s += i.name + " | ";
-		}
+		//calculate padding
+		std::vector<int> padding;
+		padding.resize(data.size());
+		std::fill(padding.begin(), padding.end(), 10);
 		const int columnCount = tableInfo.metadata.size();
+		for (int i = 0; i < data.size(); i++) {
+			for (int j = 0; j < columnCount; j++) {
+				if (padding[j] < data[i][j].length()) padding[j] = data[i][j].length();
+			}
+		}
+		for (int i = 0; i < columnCount; i++) {
+			int len = tableInfo.metadata[i].name.length();
+			if (len > padding[i]) padding[i] = len;
+			s += tableInfo.metadata[i].name + std::string(padding[i] - len + 2, ' ');
+		}
 		s += '\n';
 		for (auto& i : data) {
 			for (int j = 0; j < columnCount; j++) {
-				s += i[j] + "   ";
+				s += i[j] + std::string(padding[j] - i[j].length() + 2, ' ');
 			}
 			s += '\n';
 		}
@@ -21,19 +32,17 @@ std::string SelectResult::print() {
 	}
 }
 
-SelectResult::SelectResult(int v):QueryResult(v){
+SelectResult::SelectResult(int v) :QueryResult(v) {
 }
 
-void SelectResult::setSuccess(TableInfo tableInfo, std::vector<std::vector<std::string>> data){
+void SelectResult::setSuccess(TableInfo tableInfo, std::vector<std::vector<std::string>> data) {
 	QueryResult::setSuccess(data.size());
 	this->tableInfo = std::move(tableInfo);
 	this->data = std::move(data);
 }
 
-std::string to_string(opType e)
-{
-	switch (e)
-	{
+std::string to_string(opType e) {
+	switch (e) {
 	case opType::E: return "E";
 	case opType::NE: return "NE";
 	case opType::L: return "L";
