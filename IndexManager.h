@@ -8,6 +8,7 @@
 #include"BPlusTree.h"
 #include"API.h"
 #include"BufferManager.h"
+#include"BPlusTreeNode.h"
 
 
 using namespace std;
