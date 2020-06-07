@@ -5,9 +5,9 @@ std::string SelectResult::print() {
 	if (getStatus() == 0) {
 		//calculate padding
 		std::vector<int> padding;
-		padding.resize(data.size());
-		std::fill(padding.begin(), padding.end(), 10);
 		const int columnCount = tableInfo.metadata.size();
+		padding.resize(columnCount);
+		std::fill(padding.begin(), padding.end(), 10);
 		for (int i = 0; i < data.size(); i++) {
 			for (int j = 0; j < columnCount; j++) {
 				if (padding[j] < data[i][j].length()) padding[j] = data[i][j].length();

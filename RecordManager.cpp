@@ -83,6 +83,7 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 			{
 				bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
 				const_cast<Entry*>(mp_entry)->size = rec_size;
+				const_cast<Entry*>(mp_entry)->valid = true;
 				dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
 				// todo inform index 
 				return 0;
@@ -158,8 +159,9 @@ vector<p_Entry> RecordManager::full_table_scan(const string & tableName, const v
 		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // mp: ptr pointing to mem loc
 		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
 		const Entry* mp_entry = &mp_slPage->ent;
-		for (size_t i = 0; i < mp_slPage->n_entries && mp_entry->valid; i++, mp_entry++) // trav each record in the page
+		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
 		{
+			if (!mp_entry->valid) continue; //! bug: It's NOT a break condition
 			const void *mp_record = (const char*)mp_pg + mp_entry->offs2start; // ptr to the start of this record
 			bool fit = conds_fit(cm.getTableInfo(tableName).metadata, mp_record, conds);
 			if (fit) res.push_back(p_Entry{ pageNum,(const char*)mp_entry - (const char*)mp_pg });
