@@ -35,6 +35,7 @@ private:
 	bool cond_fit(const Condition & c, const _DataType *data, const _DataType * cond_val);
 	void dump_rec(char* mp_record, const _DataType * const dataArr[], unsigned n);
 	void insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * const dataArr[]);
+	void kill_obj(const std::string & tableName, const _DataType *const * dataArr);
 	vector<p_Entry> range_scan(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates);
 	vector<p_Entry> full_table_scan(const string & tableName, const vector<Condition>& conds);
 	vector<vector<string>> to_print(const string &tableName, const vector<p_Entry> &list);

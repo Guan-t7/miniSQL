@@ -1,3 +1,4 @@
+drop table Foo;
 create table Foo(
     i int unique,
     f float,

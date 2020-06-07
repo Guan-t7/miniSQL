@@ -1,7 +1,9 @@
 #include "RecordManager.h"
 #include "pch.h"
+const unsigned FILL = 0x100; // 摊还由懒惰删除引起的插入代价
+static unsigned F = 0;
 
-//todo 内存管理；index；
+//todo index；
 RecordManager::RecordManager() : bm(BufferManager::instance())
 {
 }
@@ -70,27 +72,40 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 		dataArr[i] = mk_obj(type, s_vals[i]);
 		rec_size += dataArr[i]->size();
 	}
-	for (size_t pageNum = 0; pageNum < n_pages; pageNum++) // trav each page
+	// an opt based on probability （效果一般，耗时随记录数上升显著 e.g. 1000 rec - 0.2 s/insert
+	if (F == FILL) 
 	{
-		// 看该页可有被懒惰删除的项
-		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // ptr pointing to mem loc
+		for (size_t pageNum = 0; pageNum < n_pages; pageNum++) // trav each page
+		{
+			const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // ptr pointing to mem loc
+			const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
+			const Entry* mp_entry = &mp_slPage->ent;
+			// 看该页可有被懒惰删除的项
+			for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
+			{
+				if (!mp_entry->valid && mp_entry->size > rec_size) // 被懒惰删除的项 可用
+				{
+					bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
+					const_cast<Entry*>(mp_entry)->size = rec_size;
+					const_cast<Entry*>(mp_entry)->valid = true;
+					dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
+					// todo inform index 
+					return 0;
+				}
+			}
+		}
+		F = 0;
+	}
+	F++;
+	// 径直去最后一页看有没有足够的空当
+	if (n_pages) //! 边界条件
+	{
+		size_t pageNum = n_pages - 1;
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); 
 		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
 		const Entry* mp_entry = &mp_slPage->ent;
 
-		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
-		{
-			if (!mp_entry->valid && mp_entry->size > rec_size) // 被懒惰删除的项 可用
-			{
-				bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
-				const_cast<Entry*>(mp_entry)->size = rec_size;
-				const_cast<Entry*>(mp_entry)->valid = true;
-				dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
-				// todo inform index 
-				return 0;
-			}
-		}
-		// 没有被懒惰删除的项。看有没有足够的空当
-		unsigned space_left = mp_slPage->end_fspace - ((char*)mp_entry - (char*)mp_pg);
+		unsigned space_left = mp_slPage->end_fspace - ((char*)(mp_entry + mp_slPage->n_entries) - (char*)mp_pg);
 		if (space_left > rec_size + sizeof(Entry)) // 有足够的空当, new entry
 		{
 			insert2newEntry(tableName, pageNum, rec_size, dataArr);
@@ -105,8 +120,6 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 	insert2newEntry(tableName, n_pages, rec_size, dataArr);
 	return 0;
 }
-
-
 
 
 void RecordManager::dump_rec(char * mp_record, const _DataType * const dataArr[], unsigned n)
@@ -134,9 +147,16 @@ void RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned
 	dump_rec(mp_record, dataArr, cm.getTableInfo(tableName).metadata.size());
 	mp_slPage->n_entries++;
 	//todo inform index
+	//! free space here
+	kill_obj(tableName, dataArr);
 }
 
-
+void RecordManager::kill_obj(const std::string & tableName, const _DataType *const * dataArr)
+{
+	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
+		delete dataArr[i];
+	delete[] dataArr;
+}
 
 vector<p_Entry> RecordManager::range_scan(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
 {
@@ -186,6 +206,7 @@ vector<vector<string>> RecordManager::to_print(const string & tableName, const v
 			_DataType *data = mk_obj(type, mp_record);
 			vs_record.push_back(data->to_string());
 			mp_record = (const char*)mp_record + data->size(); // step to next field
+			delete data;
 		}
 		res.push_back(vs_record);
 	}
@@ -233,10 +254,12 @@ bool RecordManager::conds_fit(const vector<Column> colMetas, const void * mp_rec
 			{
 				_DataType* cond_val = mk_obj(type, cond.val);
 				fit = cond_fit(cond, data, cond_val);
+				delete cond_val;
 				if (!fit) break;
 			}
 		}
 		mp_record = (const char*)mp_record + data->size(); // step to next field
+		delete data;
 	}
 	return fit;
 }
