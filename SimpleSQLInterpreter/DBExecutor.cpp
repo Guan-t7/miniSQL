@@ -143,7 +143,7 @@ QueryResult DBExecutor::insertQuery(std::string tableName, std::vector<std::stri
 	}
 	RecordManager rm;
 	auto res = rm.insert(tableName, values);
-	if (res != 0) return res;
+	if (res != 0) return DUPLICATED_UNIQUE_KEY;
 	result.setSuccess(1);
 	return result;
 }
