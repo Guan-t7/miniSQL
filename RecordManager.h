@@ -6,10 +6,10 @@
 #include "SimpleSQLInterpreter/SelectResult.h"
 
 using p_Entry = tuple<unsigned, unsigned>;	// pageNum, offs
-// Ô¤¼ÆÊ¹ÓÃ ch10 - Slotted Page Structure
+// é¢„è®¡ä½¿ç”¨ ch10 - Slotted Page Structure
 
-// Items within a single record ¿ÚÇø
-// continuous storage; Í¬Ò»ÖÖÊı¾İÀàĞÍ comparable; has a size(probably variable)
+// Items within a single record å£åŒº
+// continuous storage; åŒä¸€ç§æ•°æ®ç±»å‹ comparable; has a size(probably variable)
 class _DataType
 {
 public:
@@ -18,9 +18,9 @@ public:
 	virtual bool operator<(const _DataType &d2) const = 0;
 	virtual bool operator==(const _DataType &d2) const = 0;
 	virtual string to_string() const = 0;
-	virtual void dump(char* p) const = 0; // ĞòÁĞ»¯µ½pageÉÏ
+	virtual void dump(char* p) const = 0; // åºåˆ—åŒ–åˆ°pageä¸Š
 };
-// emmmÒª×öµÄÆäÊµÊÇ ¸ù¾İÌáÊ¾½øĞĞĞòÁĞ»¯ºÍ·´ĞòÁĞ»¯
+// emmmè¦åšçš„å…¶å®æ˜¯ æ ¹æ®æç¤ºè¿›è¡Œåºåˆ—åŒ–å’Œååºåˆ—åŒ–
 
 class RecordManager
 {

@@ -1,74 +1,71 @@
 #pragma once
-#include <stdio.h>
-#include <map>
-#include <string>
-#include <sstream>
-#include "BufferManager.h"
-#include "SimpleSQLInterpreter/DBInfo.h"
+#include<string>
+#include<cstdio>
+#include<iostream>
+#include<map>
+#include<vector>
+#include<sstream>
+#include"BPlusTree.h"
+#include"API.h"
+#include"BufferManager.h"
+#include"BPlusTreeNode.h"
 
-class IndexManager {
+
+using namespace std;
+
+struct IndexInfo
+{
 public:
-	int static const TYPE_FLOAT = 0;
-	int static const TYPE_INT = -1;
-	//ÆäËûÊı×Ö´ú±íchar¼°Æä³¤¶È£¬ÀıÈç10´ú±íchar(10)
-	map<int, IndexInfo*> indexMap;
+	//typeè¡¨ç¤ºæ•°æ®ç±»å‹ï¼Œ-1ä¸ºintï¼Œ0ä¸ºfloatï¼Œ1-255ä¸ºchar
+	int Type;
+	string IndexName;
+	string TableName;
+	string Attribute;
+	void* BTree;
+};
+
+class IndexManager
+{
+public:
+	struct convert{
+		int inttype;
+		float floattype;
+		string stringtype;
+	}ck;
 	
-	//×ª»»ÊäÈëµÄÊı¾İ
-	struct keyTmp {
-		int intTmp;
-		float floatTmp;
-		string stringTmp;
-	} kt;
-
-	//»ñÈ¡B+Ê÷degree
-	int getDegree(int type);
-
-	//»ñÈ¡½ÚµãµÄkey
-	int getKeySize(int type);
-
-	void setKey(int type, string key);
+	map<int, IndexInfo*> IndexMap;
 
 
-public:
+IndexManager();
+
+~IndexManager();
 
 
-	// ´´½¨/¶ÁÈ¡index£¬Éú³É¿ÕÊ÷
-	IndexManager();
 
-	~IndexManager();
-
-	void* createIndex(string indexName,string tableName, string Attribute ,int type);
-
-	int dropIndex(string indexName);
-
-	void* getIndex(string indexName);
-
-	value searchValue(string indexName, string key, int type);
-
-	vector<value> searchValueConditional(string indexName, string key, int type, int direction);
-
-	void insertIndex(string indexName, string key, value recordAddress, int type);
-
-	void deleteIndexByKey(string indexName, string key, int type);
-
-	void updateIndex(string indexName, string key, value recordAddress,int type);
+void* IndexManager::CreateIndex(int Type, string IndexName, string TableName, string Attribute);
 
 
-	//´Óbuffer¶ÁÈ¡index
-	void loadIndexInfos();
-	//½«indexĞ´Èëbuffer
-	int writeIndexInfosintoBuffer();
+int IndexManager::DropIndex(string IndexName);
 
-	void showallIndexs() {
-		map<int, IndexInfo*>::iterator it;
-		for (it = indexMap.begin(); it != indexMap.end(); it++) {
 
-			cout << "IndexName"<<it->second->indexName << endl;
-			if (it->second->type == -1) {
-				BTree<int>* bt;
-				bt = (BTree<int>*)it->second->Tree;
-			}
-		}
-	}
+void ConvertKey(int Type, string Key);
 
+
+void* IndexManager::GetIndex(string IndexName);
+
+
+char* IndexManager::IndexSearch(int Type,string IndexName, string Key);
+
+
+//Conditon 0ä¸ºå°äº 1ä¸ºå°äºç­‰äº 2ä¸ºå¤§äº 3ä¸ºå¤§äºç­‰äº
+vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
+
+
+void IndexInsertion(int Type, string IndexName, string Key,char* Address);
+
+
+void IndexDeletion(int Type, string IndexName, string Key);
+
+
+void IndexUpdate(int Type, string IndexName, string Key, char* Address);
 };

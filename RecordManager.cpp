@@ -1,9 +1,9 @@
 #include "RecordManager.h"
 #include "pch.h"
-const unsigned FILL = 0x100; // Ì¯»¹ÓÉÀÁ¶èÉ¾³ıÒıÆğµÄ²åÈë´ú¼Û
+const unsigned FILL = 0x100; // æ‘Šè¿˜ç”±æ‡’æƒ°åˆ é™¤å¼•èµ·çš„æ’å…¥ä»£ä»·
 static unsigned F = 0;
 
-//todo index£»
+//todo indexï¼›
 RecordManager::RecordManager() : bm(BufferManager::instance())
 {
 }
@@ -32,15 +32,15 @@ struct Entry
 struct Sl_Pg_Head
 {
 	unsigned n_entries;
-	unsigned end_fspace; // Ò³ÄÚµÄfree spaceÊÇ[µÚn_entriesÏî Entry, end_fspace)
+	unsigned end_fspace; // é¡µå†…çš„free spaceæ˜¯[ç¬¬n_entriesé¡¹ Entry, end_fspace)
 	Entry ent;
 	void init() { n_entries = 0; end_fspace = SIZEOF_PAGE; }
 };
 
 // access and manip the storage; do comp in certain field
-// ´Ó¡­¡­»ñµÃtableµÄÄ£Ê½ĞÅÏ¢£º±ÈÈçÒ»Ìõ¼ÇÂ¼¸÷fieldµÄÀàĞÍºÍ´óĞ¡
-// ¶ÔtableÖĞµÄÃ¿¸öPage£¬¶ÔPageÖĞµÄÃ¿Ìõrecord ½øĞĞparse
-// ´Ó¡­¡­µÃµ½²éÑ¯Ìõ¼ş
+// ä»â€¦â€¦è·å¾—tableçš„æ¨¡å¼ä¿¡æ¯ï¼šæ¯”å¦‚ä¸€æ¡è®°å½•å„fieldçš„ç±»å‹å’Œå¤§å°
+// å¯¹tableä¸­çš„æ¯ä¸ªPageï¼Œå¯¹Pageä¸­çš„æ¯æ¡record è¿›è¡Œparse
+// ä»â€¦â€¦å¾—åˆ°æŸ¥è¯¢æ¡ä»¶
 vector<vector<string>> RecordManager::select(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
 {
 	if (candidates.empty()) return to_print(tableName, full_table_scan(tableName, conds));
@@ -61,8 +61,8 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 			conds.emplace_back(Condition(col.name, opType::E, s_vals[i]));
 		}
 	}
-	if (!select(tableName, conds).empty()) return 1; //todo µ÷api
-	// Field¶ÔÏó¹¹Ôì³öÀ´£¬Í¬Ê±È·¶¨¼ÇÂ¼³¤¶È
+	if (!select(tableName, conds).empty()) return 1; //todo è°ƒapi
+	// Fieldå¯¹è±¡æ„é€ å‡ºæ¥ï¼ŒåŒæ—¶ç¡®å®šè®°å½•é•¿åº¦
 	unsigned rec_size = 0;
 	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
@@ -72,7 +72,7 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 		dataArr[i] = mk_obj(type, s_vals[i]);
 		rec_size += dataArr[i]->size();
 	}
-	// an opt based on probability £¨Ğ§¹ûÒ»°ã£¬ºÄÊ±Ëæ¼ÇÂ¼ÊıÉÏÉıÏÔÖø e.g. 1000 rec - 0.2 s/insert
+	// an opt based on probability ï¼ˆæ•ˆæœä¸€èˆ¬ï¼Œè€—æ—¶éšè®°å½•æ•°ä¸Šå‡æ˜¾è‘— e.g. 1000 rec - 0.2 s/insert
 	if (F == FILL) 
 	{
 		for (size_t pageNum = 0; pageNum < n_pages; pageNum++) // trav each page
@@ -80,10 +80,10 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 			const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // ptr pointing to mem loc
 			const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
 			const Entry* mp_entry = &mp_slPage->ent;
-			// ¿´¸ÃÒ³¿ÉÓĞ±»ÀÁ¶èÉ¾³ıµÄÏî
+			// çœ‹è¯¥é¡µå¯æœ‰è¢«æ‡’æƒ°åˆ é™¤çš„é¡¹
 			for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
 			{
-				if (!mp_entry->valid && mp_entry->size > rec_size) // ±»ÀÁ¶èÉ¾³ıµÄÏî ¿ÉÓÃ
+				if (!mp_entry->valid && mp_entry->size > rec_size) // è¢«æ‡’æƒ°åˆ é™¤çš„é¡¹ å¯ç”¨
 				{
 					bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
 					const_cast<Entry*>(mp_entry)->size = rec_size;
@@ -97,8 +97,8 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 		F = 0;
 	}
 	F++;
-	// ¾¶Ö±È¥×îºóÒ»Ò³¿´ÓĞÃ»ÓĞ×ã¹»µÄ¿Õµ±
-	if (n_pages) //! ±ß½çÌõ¼ş
+	// å¾„ç›´å»æœ€åä¸€é¡µçœ‹æœ‰æ²¡æœ‰è¶³å¤Ÿçš„ç©ºå½“
+	if (n_pages) //! è¾¹ç•Œæ¡ä»¶
 	{
 		size_t pageNum = n_pages - 1;
 		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); 
@@ -106,18 +106,19 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 		const Entry* mp_entry = &mp_slPage->ent;
 
 		unsigned space_left = mp_slPage->end_fspace - ((char*)(mp_entry + mp_slPage->n_entries) - (char*)mp_pg);
-		if (space_left > rec_size + sizeof(Entry)) // ÓĞ×ã¹»µÄ¿Õµ±, new entry
+		if (space_left > rec_size + sizeof(Entry)) // æœ‰è¶³å¤Ÿçš„ç©ºå½“, new entry
 		{
 			insert2newEntry(tableName, pageNum, rec_size, dataArr);
 			return 0; //! bug: return after d
 		}
 	}
-	// ÒÑÓĞµÄÒ³¶¼ÎŞ·¨²åÈë£¬get a new page and init
+	// å·²æœ‰çš„é¡µéƒ½æ— æ³•æ’å…¥ï¼Œget a new page and init
 	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", n_pages));
 	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
 	mp_slPage->init();
 	// insert to this page
 	insert2newEntry(tableName, n_pages, rec_size, dataArr);
+
 	return 0;
 }
 
