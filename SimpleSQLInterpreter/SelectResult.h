@@ -7,9 +7,9 @@ class SelectResult :
 public:
 	std::string print() override;
 	SelectResult(int);
-	void setSuccess(TableInfo tableInfo, std::vector<std::vector<std::string>> data);
+	void setSuccess(TableDsc tableInfo, std::vector<std::vector<std::string>> data);
 private:
-	TableInfo tableInfo; //? ÎªÊ²Ã´ÐèÒª·µ»ØÕâ¸ö re:²»È»Ã»¸ñÊ½Ã»·¨Êä³öµ½ÆÁÄ»ÉÏ
+	TableDsc tableInfo; //? ÎªÊ²Ã´ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ re:ï¿½ï¿½È»Ã»ï¿½ï¿½Ê½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½
 	std::vector<std::vector<std::string>> data;
 };
 

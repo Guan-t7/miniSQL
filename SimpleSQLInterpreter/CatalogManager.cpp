@@ -4,38 +4,38 @@
 
 #include "error.h"
 #include "BufferManager.h"
-TableInfo CatalogManager::getTableInfo(const std::string& tableName) {
+TableDsc CatalogManager::getTableInfo(const std::string& tableName) {
 	const auto filename = "table/" + tableName + ".tbl";
 	ifstream file(filename);
 	if (!file.fail()) {
 		const std::string s((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());
 		std::istringstream is(s);
-		return TableInfo::parseString(is);
+		return TableDsc::parseString(is);
 	} else {
 		return {};
 	}
 }
 
-int CatalogManager::updateIndex(IndexInfos indexInfos) {
+int CatalogManager::updateIndex(IndexDscs indexInfos) {
 	std::string s = indexInfos.toString();
 	ofstream indexFile("all.idx", std::ofstream::trunc);
 	indexFile << s;
 	return SUCCESS;
 }
 
-IndexInfos CatalogManager::getIndex() {
+IndexDscs CatalogManager::getIndex() {
 	ifstream indexFile("all.idx");
 	if (!indexFile.fail()) {
 		const std::string s((std::istreambuf_iterator<char>(indexFile)),
 			std::istreambuf_iterator<char>());
 		std::istringstream is(s);
-		return IndexInfos::parseString(is);
+		return IndexDscs::parseString(is);
 	} else {
 		return {};
 	}
 }
 
-int CatalogManager::updateTableInfo(TableInfo tableInfo) {
+int CatalogManager::updateTableInfo(TableDsc tableInfo) {
 	const auto filename = "table/" + tableInfo.name + ".tbl";
 	std::string s = tableInfo.toString();
 	ofstream file(filename, std::ofstream::trunc);

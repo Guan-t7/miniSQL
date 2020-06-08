@@ -3,10 +3,10 @@
 
 class CatalogManager {
 public:
-	static TableInfo getTableInfo(const std::string& tableName);
-	static int updateIndex(IndexInfos indexInfo);
-	static IndexInfos getIndex();
-	static int updateTableInfo(TableInfo tableInfo);
+	static TableDsc getTableInfo(const std::string& tableName);
+	static int updateIndex(IndexDscs indexInfo);
+	static IndexDscs getIndex();
+	static int updateTableInfo(TableDsc tableInfo);
 	static int dropTable(const std::string& tableName);
 };
 

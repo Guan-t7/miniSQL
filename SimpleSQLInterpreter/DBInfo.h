@@ -27,12 +27,12 @@ struct Column {
 	}
 };
 
-struct IndexInfo {
+struct IndexDsc {
 	std::string tableName;
 	std::string indexName;
 	std::string columnName;
-	static IndexInfo parseString(std::istringstream& s) {
-		IndexInfo ret;
+	static IndexDsc parseString(std::istringstream& s) {
+		IndexDsc ret;
 		s >> ret.tableName;
 		s >> ret.indexName;
 		s >> ret.columnName;
@@ -43,15 +43,15 @@ struct IndexInfo {
 	}
 };
 
-struct IndexInfos {
-	std::vector<IndexInfo> indexInfos;
-	static IndexInfos parseString(std::istringstream& s) {
-		IndexInfos ret;
+struct IndexDscs {
+	std::vector<IndexDsc> indexInfos;
+	static IndexDscs parseString(std::istringstream& s) {
+		IndexDscs ret;
 		int count;
 		s >> count;
 		for(int i=0;i<count;i++)
 		{
-			ret.indexInfos.emplace_back(IndexInfo::parseString(s));
+			ret.indexInfos.emplace_back(IndexDsc::parseString(s));
 		}
 		return ret;
 	}
@@ -64,12 +64,12 @@ struct IndexInfos {
 	}
 };
 // This will not go larger than 4096B so no more paging consideration, damn
-struct TableInfo {
+struct TableDsc {
 	std::string name;
 	std::vector<Column> metadata;
 	std::string primaryKey;
-	static TableInfo parseString(std::istringstream& s) {
-		TableInfo ret;
+	static TableDsc parseString(std::istringstream& s) {
+		TableDsc ret;
 		int columnCount;
 		s >> ret.name;
 		s >> columnCount;

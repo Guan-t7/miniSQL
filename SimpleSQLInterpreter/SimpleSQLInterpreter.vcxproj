@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\BufferManager.cpp" />
+    <ClCompile Include="..\Index-buffer.cpp" />
+    <ClCompile Include="..\IndexManager.cpp" />
     <ClCompile Include="..\RecordManager.cpp" />
     <ClCompile Include="CatalogManager.cpp" />
     <ClCompile Include="DBExecutor.cpp" />
@@ -39,7 +41,10 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\BPlusTree.h" />
+    <ClInclude Include="..\BPlusTreeNode.h" />
     <ClInclude Include="..\BufferManager.h" />
+    <ClInclude Include="..\IndexManager.h" />
     <ClInclude Include="..\RecordManager.h" />
     <ClInclude Include="CatalogManager.h" />
     <ClInclude Include="DBExecutor.h" />

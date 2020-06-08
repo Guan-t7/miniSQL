@@ -83,7 +83,7 @@ antlrcpp::Any SQLVisitor::visitDropTableQuery(sqlParser::DropTableQueryContext* 
 }
 
 antlrcpp::Any SQLVisitor::visitCreateIndexQuery(sqlParser::CreateIndexQueryContext* ctx) {
-	const IndexInfo info{
+	const IndexDsc info{
 		ctx->tableName()->accept(this), ctx->indexName()->accept(this), ctx->columnName()->accept(this)
 	};
 	auto result = DBExecutor::createIndexQuery(info);
@@ -95,7 +95,7 @@ antlrcpp::Any SQLVisitor::visitCreateTableQuery(sqlParser::CreateTableQueryConte
 	std::string primaryKey;
 	auto pk = ctx->primaryKeyDefinition()->accept(this);
 	if (pk.isNotNull()) primaryKey = pk.as<std::string>();
-	const TableInfo info{ ctx->tableName()->accept(this), ctx->columnDefinitions()->accept(this), primaryKey };
+	const TableDsc info{ ctx->tableName()->accept(this), ctx->columnDefinitions()->accept(this), primaryKey };
 
 	auto result = DBExecutor::createTableQuery(info);
 	std::cout << result.print();

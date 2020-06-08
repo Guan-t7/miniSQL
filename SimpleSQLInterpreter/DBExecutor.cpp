@@ -75,7 +75,7 @@ QueryResult DBExecutor::deleteQuery(std::string tableName, std::vector<Condition
 	return result;
 }
 
-QueryResult DBExecutor::createTableQuery(TableInfo info) {
+QueryResult DBExecutor::createTableQuery(TableDsc info) {
 	QueryResult result(SUCCESS);
 	const auto tableInfo = CatalogManager::getTableInfo(info.name);
 	if (!tableInfo.name.empty()) return EXISTING_TABLE_NAME;
@@ -100,12 +100,12 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	}
 	if (primaryKeyFound) {
 		if (!info.primaryKey.empty()) {
-			IndexInfo pi;
+			IndexDsc pi;
 			pi.columnName = info.primaryKey;
 			pi.indexName = info.name + "PKIndex";
 			pi.tableName = info.name;
 			IndexManager im;
-			im.createIndex(pi.indexName, pi.tableName, pi.columnName, toIMType(ptype));
+			im.CreateIndex(pi.indexName, pi.tableName, pi.columnName, toIMType(ptype));
 			auto indexInfos = CatalogManager::getIndex();
 			indexInfos.indexInfos.emplace_back(pi);
 			CatalogManager::updateIndex(indexInfos);
@@ -120,11 +120,11 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 	return result;
 }
 
-QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
+QueryResult DBExecutor::createIndexQuery(IndexDsc info) {
 	QueryResult result(SUCCESS);
 	auto indexInfos = CatalogManager::getIndex();
 	if (std::any_of(indexInfos.indexInfos.begin(), indexInfos.indexInfos.end(),
-		[&info](const IndexInfo& i) {return i.indexName == info.indexName; })) {
+		[&info](const IndexDsc& i) {return i.indexName == info.indexName; })) {
 		return EXISTING_INDEX_NAME;
 	}
 	auto tableInfo = CatalogManager::getTableInfo(info.tableName);
@@ -134,7 +134,7 @@ QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
 	if (pos != tableInfo.metadata.end()) {
 		indexInfos.indexInfos.emplace_back(info);
 		IndexManager im;
-		im.createIndex(info.indexName, info.tableName, info.columnName, toIMType(pos->type));
+		im.CreateIndex(info.indexName, info.tableName, info.columnName, toIMType(pos->type));
 		CatalogManager::updateIndex(indexInfos);
 	} else {
 		return NOT_EXISTING_COLUMN_NAME;
@@ -169,7 +169,7 @@ QueryResult DBExecutor::dropTableQuery(std::string tableName) {
 	IndexManager im;
 	for (auto iter = indexInfo.indexInfos.begin(); iter != indexInfo.indexInfos.end();) {
 		if (iter->tableName == tableName) {
-			im.dropIndex(iter->indexName);
+			im.DropIndex(iter->indexName);
 			iter = indexInfo.indexInfos.erase(iter);
 		} else {
 			++iter;
@@ -187,19 +187,19 @@ QueryResult DBExecutor::dropIndexQuery(std::string indexName) {
 	QueryResult result(SUCCESS);
 	auto indexInfos = CatalogManager::getIndex();
 	const auto pos = std::find_if(indexInfos.indexInfos.begin(), indexInfos.indexInfos.end(),
-		[&indexName](const IndexInfo& i) {return i.indexName == indexName; });
+		[&indexName](const IndexDsc& i) {return i.indexName == indexName; });
 	if (pos == indexInfos.indexInfos.end()) {
 		return NOT_EXISTING_INDEX_NAME;
 	}
 	indexInfos.indexInfos.erase(pos);
 	IndexManager im;
-	im.dropIndex(indexName);
+	im.DropIndex(indexName);
 	CatalogManager::updateIndex(indexInfos);
 	result.setSuccess(0);
 	return result;
 }
 
-IndexInfo DBExecutor::checkIndex(std::string tableName, std::string columnName) {
+IndexDsc DBExecutor::checkIndex(std::string tableName, std::string columnName) {
 	auto indexInfos = CatalogManager::getIndex();
 	for (auto index : indexInfos.indexInfos) {
 		if (index.columnName == columnName && index.tableName == tableName) return index;
@@ -207,8 +207,8 @@ IndexInfo DBExecutor::checkIndex(std::string tableName, std::string columnName) 
 	return {};
 }
 
-std::vector<IndexInfo> DBExecutor::checkIndex(std::string tableName) {
-	std::vector<IndexInfo> infos;
+std::vector<IndexDsc> DBExecutor::checkIndex(std::string tableName) {
+	std::vector<IndexDsc> infos;
 	auto indexInfos = CatalogManager::getIndex();
 	for (auto index : indexInfos.indexInfos) {
 		if (index.tableName == tableName) infos.emplace_back(index);
@@ -217,7 +217,7 @@ std::vector<IndexInfo> DBExecutor::checkIndex(std::string tableName) {
 }
 
 int toIMType(std::pair<std::string, int> type) {
-	if (type.first == "int") return IndexManager::TYPE_INT;
-	if (type.first == "float") return IndexManager::TYPE_FLOAT;
+	if (type.first == "int") return -1;
+	if (type.first == "float") return 0;
 	return type.second;
 }
