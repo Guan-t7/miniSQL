@@ -48,7 +48,7 @@ void* IndexManager::CreateIndex(int Type, string IndexName, string TableName, st
 int IndexManager::DropIndex(string IndexName);
 
 
-ConvertKey(int Type, string Key);
+void ConvertKey(int Type, string Key);
 
 
 void* IndexManager::GetIndex(string IndexName);
@@ -61,11 +61,11 @@ char* IndexManager::IndexSearch(int Type,string IndexName, string Key);
 vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
 
 
-IndexInsertion(int Type, string IndexName, string Key,char* Address);
+void IndexInsertion(int Type, string IndexName, string Key,char* Address);
 
 
-IndexDeletion(int Type, string IndexName, string Key);
+void IndexDeletion(int Type, string IndexName, string Key);
 
 
-IndexUpdate(int Type, string IndexName, string Key, char* Address);
+void IndexUpdate(int Type, string IndexName, string Key, char* Address);
 };
