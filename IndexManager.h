@@ -13,8 +13,6 @@
 
 using namespace std;
 
-typedef char* value;
-
 struct IndexInfo
 {
 public:
@@ -56,18 +54,18 @@ ConvertKey(int Type, string Key);
 void* IndexManager::GetIndex(string IndexName);
 
 
-value IndexManager::IndexSearch(int Type,string IndexName, string Key);
+char* IndexManager::IndexSearch(int Type,string IndexName, string Key);
 
 
 //Conditon 0为小于 1为小于等于 2为大于 3为大于等于
-vector<value> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
+vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
 
 
-IndexInsertion(int Type, string IndexName, string Key,value Address);
+IndexInsertion(int Type, string IndexName, string Key,char* Address);
 
 
 IndexDeletion(int Type, string IndexName, string Key);
 
 
-IndexUpdate(int Type, string IndexName, string Key, value Address);
+IndexUpdate(int Type, string IndexName, string Key, char* Address);
 };
