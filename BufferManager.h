@@ -1,11 +1,11 @@
 #pragma once
 // UTF-8 
 // C++11
-#include <string>
-#include <utility>	// tuple
+#include "pch.h" // tuple
 #include <unordered_map>
 
 using namespace std;
+#define DEBUG
 
 // buffer 由如下参数的 Pages 构成
 const unsigned SIZEOF_PAGE = 4096;	//? make it bigger?
@@ -60,3 +60,5 @@ public:
 	int delete_file(string filename);
 	void flush();	// write back all dirty pages to disk: sync the changes
 };
+
+#undef DEBUG

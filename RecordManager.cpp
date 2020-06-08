@@ -1,7 +1,9 @@
 #include "RecordManager.h"
 #include "pch.h"
+const unsigned FILL = 0x100; // æ‘Šè¿˜ç”±æ‡’æƒ°åˆ é™¤å¼•èµ·çš„æ’å…¥ä»£ä»·
+static unsigned F = 0;
 
-//todo ÄÚ´æ¹ÜÀí£»index£»
+//todo indexï¼›
 RecordManager::RecordManager() : bm(BufferManager::instance())
 {
 }
@@ -22,7 +24,7 @@ int RecordManager::drop_table(string tableName)
 
 struct Entry
 {
-	unsigned offs2start;
+	unsigned offs2start; // relative to the start of page
 	unsigned short size;
 	bool valid;
 	//todo null bitmap
@@ -30,15 +32,15 @@ struct Entry
 struct Sl_Pg_Head
 {
 	unsigned n_entries;
-	unsigned end_fspace; // Ò³ÄÚµÄfree spaceÊÇ[µÚn_entriesÏî Entry, end_fspace)
+	unsigned end_fspace; // é¡µå†…çš„free spaceæ˜¯[ç¬¬n_entriesé¡¹ Entry, end_fspace)
 	Entry ent;
 	void init() { n_entries = 0; end_fspace = SIZEOF_PAGE; }
 };
 
 // access and manip the storage; do comp in certain field
-// ´Ó¡­¡­»ñµÃtableµÄÄ£Ê½ĞÅÏ¢£º±ÈÈçÒ»Ìõ¼ÇÂ¼¸÷fieldµÄÀàĞÍºÍ´óĞ¡
-// ¶ÔtableÖĞµÄÃ¿¸öPage£¬¶ÔPageÖĞµÄÃ¿Ìõrecord ½øĞĞparse
-// ´Ó¡­¡­µÃµ½²éÑ¯Ìõ¼ş
+// ä»â€¦â€¦è·å¾—tableçš„æ¨¡å¼ä¿¡æ¯ï¼šæ¯”å¦‚ä¸€æ¡è®°å½•å„fieldçš„ç±»å‹å’Œå¤§å°
+// å¯¹tableä¸­çš„æ¯ä¸ªPageï¼Œå¯¹Pageä¸­çš„æ¯æ¡record è¿›è¡Œparse
+// ä»â€¦â€¦å¾—åˆ°æŸ¥è¯¢æ¡ä»¶
 vector<vector<string>> RecordManager::select(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
 {
 	if (candidates.empty()) return to_print(tableName, full_table_scan(tableName, conds));
@@ -53,50 +55,64 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 	vector<Condition> conds;
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
 	{
-		auto &&col = cm.getTableInfo(tableName).metadata[i];
+		auto col = cm.getTableInfo(tableName).metadata[i]; //! bug: returning temp obj, cannot use reference
 		if (col.unique)
 		{
 			conds.emplace_back(Condition(col.name, opType::E, s_vals[i]));
 		}
 	}
-	if (!select(tableName, conds).empty()) return 1; //todo µ÷api
-	// Field¶ÔÏó¹¹Ôì³öÀ´£¬Í¬Ê±È·¶¨¼ÇÂ¼³¤¶È
+	if (!select(tableName, conds).empty()) return 1; //todo è°ƒapi
+	// Fieldå¯¹è±¡æ„é€ å‡ºæ¥ï¼ŒåŒæ—¶ç¡®å®šè®°å½•é•¿åº¦
 	unsigned rec_size = 0;
 	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
 	{
-		auto &&col = cm.getTableInfo(tableName).metadata[i];
+		auto col = cm.getTableInfo(tableName).metadata[i];
 		pair<DataType, int> type = eType(col.type);
 		dataArr[i] = mk_obj(type, s_vals[i]);
 		rec_size += dataArr[i]->size();
 	}
-	// trav each page
-	for (size_t pageNum = 0; pageNum < n_pages; pageNum++)
+	// an opt based on probability ï¼ˆæ•ˆæœä¸€èˆ¬ï¼Œè€—æ—¶éšè®°å½•æ•°ä¸Šå‡æ˜¾è‘— e.g. 1000 rec - 0.2 s/insert
+	if (F == FILL) 
 	{
-		// ¿´¸ÃÒ³¿ÉÓĞ±»ÀÁ¶èÉ¾³ıµÄÏî
-		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // ptr pointing to mem loc
+		for (size_t pageNum = 0; pageNum < n_pages; pageNum++) // trav each page
+		{
+			const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // ptr pointing to mem loc
+			const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
+			const Entry* mp_entry = &mp_slPage->ent;
+			// çœ‹è¯¥é¡µå¯æœ‰è¢«æ‡’æƒ°åˆ é™¤çš„é¡¹
+			for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
+			{
+				if (!mp_entry->valid && mp_entry->size > rec_size) // è¢«æ‡’æƒ°åˆ é™¤çš„é¡¹ å¯ç”¨
+				{
+					bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
+					const_cast<Entry*>(mp_entry)->size = rec_size;
+					const_cast<Entry*>(mp_entry)->valid = true;
+					dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
+					// todo inform index 
+					return 0;
+				}
+			}
+		}
+		F = 0;
+	}
+	F++;
+	// å¾„ç›´å»æœ€åä¸€é¡µçœ‹æœ‰æ²¡æœ‰è¶³å¤Ÿçš„ç©ºå½“
+	if (n_pages) //! è¾¹ç•Œæ¡ä»¶
+	{
+		size_t pageNum = n_pages - 1;
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); 
 		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
 		const Entry* mp_entry = &mp_slPage->ent;
 
-		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
-		{
-			if (!mp_entry->valid && mp_entry->size > rec_size) // ±»ÀÁ¶èÉ¾³ıµÄÏî ¿ÉÓÃ
-			{
-				bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
-				const_cast<Entry*>(mp_entry)->size = rec_size;
-				dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
-				// todo inform index 
-				return 0;
-			}
-		}
-		// Ã»ÓĞ±»ÀÁ¶èÉ¾³ıµÄÏî¡£¿´ÓĞÃ»ÓĞ×ã¹»µÄ¿Õµ±
-		unsigned space_left = mp_slPage->end_fspace - ((char*)mp_entry - (char*)mp_pg);
-		if (space_left > rec_size + sizeof(Entry)) // new entry
+		unsigned space_left = mp_slPage->end_fspace - ((char*)(mp_entry + mp_slPage->n_entries) - (char*)mp_pg);
+		if (space_left > rec_size + sizeof(Entry)) // æœ‰è¶³å¤Ÿçš„ç©ºå½“, new entry
 		{
 			insert2newEntry(tableName, pageNum, rec_size, dataArr);
+			return 0; //! bug: return after d
 		}
 	}
-	// get a new page and init
+	// å·²æœ‰çš„é¡µéƒ½æ— æ³•æ’å…¥ï¼Œget a new page and init
 	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", n_pages));
 	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
 	mp_slPage->init();
@@ -107,9 +123,7 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 }
 
 
-
-
-void RecordManager::dump_rec(char * mp_record, const _DataType * dataArr[], unsigned n)
+void RecordManager::dump_rec(char * mp_record, const _DataType * const dataArr[], unsigned n)
 {
 	for (size_t i = 0; i < n; i++)
 	{
@@ -118,24 +132,32 @@ void RecordManager::dump_rec(char * mp_record, const _DataType * dataArr[], unsi
 	}
 }
 
-void RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * dataArr[])
+void RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * const dataArr[])
 {
 	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", i));
 	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
 	mp_slPage->end_fspace -= rec_size;
 
 	Entry* mp_entry = &mp_slPage->ent;
-	mp_entry[mp_slPage->n_entries].offs2start = mp_slPage->end_fspace;
-	mp_entry[mp_slPage->n_entries].size = rec_size;
-	mp_entry[mp_slPage->n_entries].valid = true;
+	mp_entry += mp_slPage->n_entries; // to TGT
+	mp_entry->offs2start = mp_slPage->end_fspace;
+	mp_entry->size = rec_size;
+	mp_entry->valid = true;
 
-	char* mp_record = (char*)mp_pg + mp_entry[mp_slPage->n_entries].offs2start;
+	char* mp_record = (char*)mp_pg + mp_entry->offs2start;
 	dump_rec(mp_record, dataArr, cm.getTableInfo(tableName).metadata.size());
 	mp_slPage->n_entries++;
 	//todo inform index
+	//! free space here
+	kill_obj(tableName, dataArr);
 }
 
-
+void RecordManager::kill_obj(const std::string & tableName, const _DataType *const * dataArr)
+{
+	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
+		delete dataArr[i];
+	delete[] dataArr;
+}
 
 vector<p_Entry> RecordManager::range_scan(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
 {
@@ -158,8 +180,9 @@ vector<p_Entry> RecordManager::full_table_scan(const string & tableName, const v
 		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); // mp: ptr pointing to mem loc
 		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
 		const Entry* mp_entry = &mp_slPage->ent;
-		for (size_t i = 0; i < mp_slPage->n_entries && mp_entry->valid; i++, mp_entry++) // trav each record in the page
+		for (size_t i = 0; i < mp_slPage->n_entries; i++, mp_entry++) // trav each record in the page
 		{
+			if (!mp_entry->valid) continue; //! bug: It's NOT a break condition
 			const void *mp_record = (const char*)mp_pg + mp_entry->offs2start; // ptr to the start of this record
 			bool fit = conds_fit(cm.getTableInfo(tableName).metadata, mp_record, conds);
 			if (fit) res.push_back(p_Entry{ pageNum,(const char*)mp_entry - (const char*)mp_pg });
@@ -179,11 +202,12 @@ vector<vector<string>> RecordManager::to_print(const string & tableName, const v
 		vector<string> vs_record;
 		for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++) // get each field
 		{
-			auto &&col = cm.getTableInfo(tableName).metadata[i];
+			auto col = cm.getTableInfo(tableName).metadata[i];
 			pair<DataType, int> type = eType(col.type);
 			_DataType *data = mk_obj(type, mp_record);
 			vs_record.push_back(data->to_string());
 			mp_record = (const char*)mp_record + data->size(); // step to next field
+			delete data;
 		}
 		res.push_back(vs_record);
 	}
@@ -217,7 +241,7 @@ pair<DataType, int> eType(pair<std::string, int> type)
 	else return make_pair(StringType, type.second);
 }
 
-bool RecordManager::conds_fit(const vector<Column> & colMetas, const void * mp_record, const std::vector<Condition> & conds)
+bool RecordManager::conds_fit(const vector<Column> colMetas, const void * mp_record, const std::vector<Condition> & conds)
 {
 	bool fit = true;
 	for (size_t i = 0; i < colMetas.size() && fit; i++) // get each field
@@ -231,10 +255,12 @@ bool RecordManager::conds_fit(const vector<Column> & colMetas, const void * mp_r
 			{
 				_DataType* cond_val = mk_obj(type, cond.val);
 				fit = cond_fit(cond, data, cond_val);
+				delete cond_val;
 				if (!fit) break;
 			}
 		}
 		mp_record = (const char*)mp_record + data->size(); // step to next field
+		delete data;
 	}
 	return fit;
 }
@@ -295,7 +321,7 @@ _DataType* RecordManager::mk_obj(std::pair<DataType, int>& type, const string & 
 		return new T_Type<double>(stod(val));
 		break;
 	case StringType:
-		return new _StringType(val);
+		return new _StringType(val, type.second);
 		break;
 	default:
 		return nullptr;

@@ -135,7 +135,7 @@
       <PreprocessorDefinitions>WIN32;CONSOLE;_DEBUG;_LIB;%(PreprocessorDefinitions);ANTLR4CPP_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>D:\library\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
@@ -154,7 +154,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);ANTLR4CPP_STATIC;CONSOLE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>D:\library\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
@@ -175,7 +175,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;ANTLR4CPP_STATIC;CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>D:\library\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
@@ -198,7 +198,7 @@
       <PreprocessorDefinitions>NDEBUG;_LIB;ANTLR4CPP_STATIC;CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>D:\library\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include\antlr4-runtime;D:\work\personal\2020DB\miniSQL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>

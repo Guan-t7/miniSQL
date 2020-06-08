@@ -16,7 +16,7 @@ using namespace std;
 struct IndexInfo
 {
 public:
-	//type±íÊ¾Êı¾İÀàĞÍ£¬-1Îªint£¬0Îªfloat£¬1-255Îªchar
+	//typeè¡¨ç¤ºæ•°æ®ç±»å‹ï¼Œ-1ä¸ºintï¼Œ0ä¸ºfloatï¼Œ1-255ä¸ºchar
 	int Type;
 	string IndexName;
 	string TableName;
@@ -57,7 +57,7 @@ void* IndexManager::GetIndex(string IndexName);
 char* IndexManager::IndexSearch(int Type,string IndexName, string Key);
 
 
-//Conditon 0ÎªĞ¡ÓÚ 1ÎªĞ¡ÓÚµÈÓÚ 2Îª´óÓÚ 3Îª´óÓÚµÈÓÚ
+//Conditon 0ä¸ºå°äº 1ä¸ºå°äºç­‰äº 2ä¸ºå¤§äº 3ä¸ºå¤§äºç­‰äº
 vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
 
 

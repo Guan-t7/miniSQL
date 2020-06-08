@@ -1,3 +1,4 @@
+drop table Foo;
 create table Foo(
     i int unique,
     f float,
@@ -5,3 +6,24 @@ create table Foo(
     primary key ( i)
 );
 insert into Foo values(1,1.0,"foo");
+insert into Foo values(2,2.0,"foo");
+insert into Foo values(3,3.1,"boo");
+insert into Foo values(4,4.0,"foo");
+insert into Foo values(5,5.1,"boo");
+insert into Foo values(6,6.0,"foo");
+insert into Foo values(7,7.1,"boo");
+insert into Foo values(8,8.0,"foo");
+insert into Foo values(9,9.1,"boo");
+insert into Foo values(10,10.0,"foo");
+insert into Foo values(11,11.1,"boo");
+select * from Foo;
+select * from Foo where i = 2;
+select * from Foo where f < 8.0;
+select * from Foo where c != "foo";
+select * from Foo where c < "foo";
+select * from Foo where c > "boo";
+select * from Foo where i <> 1;
+delete from Foo where i = 2;
+select * from Foo where i = 2;
+insert into Foo values(2,2020.6,"foo");
+select * from Foo where i = 2;

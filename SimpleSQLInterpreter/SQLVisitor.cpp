@@ -44,9 +44,9 @@ antlrcpp::Any SQLVisitor::visitSelectTarget(sqlParser::SelectTargetContext* ctx)
 }
 
 antlrcpp::Any SQLVisitor::visitOptionalWhereClause(sqlParser::OptionalWhereClauseContext* ctx) {
-	auto ret = visitChildren(ctx);
-	if (ret.isNull()) return antlrcpp::Any(std::vector<Condition>());
-	else return ret;
+	if (ctx->whereClause() == nullptr) return antlrcpp::Any(std::vector<Condition>());
+	auto ret = ctx->whereClause()->accept(this);
+	return ret;
 }
 
 antlrcpp::Any SQLVisitor::visitWhereClause(sqlParser::WhereClauseContext* ctx) {
