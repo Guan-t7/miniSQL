@@ -31,15 +31,20 @@ private:
 
 	_DataType * mk_obj(std::pair<DataType, int>& type, const void * mp_record);
 	_DataType * mk_obj(std::pair<DataType, int>& type, const string& val);
+	_DataType ** mk_objs(const string &tableName, std::vector<std::string> &s_vals);
+	_DataType ** mk_objs(const string &tableName, const void * mp_record);
+	void kill_objs(const std::string & tableName, const _DataType *const * dataArr);
+
 	bool conds_fit(const vector<Column> colMetas, const void * mp_record, const std::vector<Condition>& conds);
 	bool cond_fit(const Condition & c, const _DataType *data, const _DataType * cond_val);
 	void dump_rec(char* mp_record, const _DataType * const dataArr[], unsigned n);
-	void insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * const dataArr[]);
-	void kill_obj(const std::string & tableName, const _DataType *const * dataArr);
-	vector<p_Entry> range_scan(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates);
-	vector<p_Entry> full_table_scan(const string & tableName, const vector<Condition>& conds);
+	p_Entry insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * const dataArr[]);
 	vector<vector<string>> to_print(const string &tableName, const vector<p_Entry> &list);
 	void set_invalid(const string &tableName, const vector<p_Entry> &list);
+	vector<p_Entry> range_scan(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates);
+	vector<p_Entry> full_table_scan(const string & tableName, const vector<Condition>& conds);
+
+	void inform_index(const string &tableName, const _DataType *const * dataArr, p_Entry p = { 0,0 });
 
 public:
 	RecordManager();
@@ -49,9 +54,7 @@ public:
 	// no candidates: full table scan; otherwise index range scan
 	vector<vector<string>> select(const string &tableName, const vector<Condition> &conds, const vector<p_Entry> &candidates = vector<p_Entry>{});
 	int insert(string tableName, std::vector<std::string> s_vals); 	// 0 for success
-	//todo I have p_Entry for index insert
 	int delete_rec(string tableName, vector<Condition> conds, const vector<p_Entry> &candidates = vector<p_Entry>{}); //! this one returns count of records deleted
-	//todo index del
 };
 
 

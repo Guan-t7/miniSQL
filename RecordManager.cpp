@@ -27,7 +27,6 @@ struct Entry
 	unsigned offs2start; // relative to the start of page
 	unsigned short size;
 	bool valid;
-	//todo null bitmap
 };
 struct Sl_Pg_Head
 {
@@ -49,31 +48,21 @@ vector<vector<string>> RecordManager::select(const string & tableName, const vec
 
 int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //todo I'm still not satisfied
 {
-	// access
 	unsigned n_pages = bm.totalPages(tableName + ".mdbf");
 	// unique integrity check
 	vector<Condition> conds;
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
 	{
 		auto col = cm.getTableInfo(tableName).metadata[i]; //! bug: returning temp obj, cannot use reference
-		if (col.unique)
-		{
-			conds.emplace_back(Condition(col.name, opType::E, s_vals[i]));
-		}
+		if (col.unique) conds.emplace_back(Condition(col.name, opType::E, s_vals[i]));
 	}
-	if (!select(tableName, conds).empty()) return 1; //todo 调api
+	if (!select(tableName, conds).empty()) return 1; //todo 这里必须加速. 调api
 	// Field对象构造出来，同时确定记录长度
+	_DataType** dataArr = mk_objs(tableName, s_vals);
 	unsigned rec_size = 0;
-	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
-	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
-	{
-		auto col = cm.getTableInfo(tableName).metadata[i];
-		pair<DataType, int> type = eType(col.type);
-		dataArr[i] = mk_obj(type, s_vals[i]);
-		rec_size += dataArr[i]->size();
-	}
+	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++) rec_size += dataArr[i]->size();
 	// an opt based on probability （效果一般，耗时随记录数上升显著 e.g. 1000 rec - 0.2 s/insert
-	if (F == FILL) 
+	if (F == FILL)
 	{
 		for (size_t pageNum = 0; pageNum < n_pages; pageNum++) // trav each page
 		{
@@ -87,9 +76,10 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 				{
 					bm.set_dirty(make_tuple(tableName + ".mdbf", pageNum));
 					const_cast<Entry*>(mp_entry)->size = rec_size;
-					const_cast<Entry*>(mp_entry)->valid = true;
-					dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size());
-					// todo inform index 
+					const_cast<Entry*>(mp_entry)->valid = true; // set_valid
+					dump_rec((char*)mp_pg + mp_entry->offs2start, dataArr, cm.getTableInfo(tableName).metadata.size()); // replace with inserted rec
+					inform_index(tableName, dataArr, p_Entry{ pageNum, (char*)mp_entry - (char*)mp_pg }); // inform index insertion
+					kill_objs(tableName, dataArr); //! holy, that's too messy They are EVERYWHERE
 					return 0;
 				}
 			}
@@ -101,14 +91,15 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 	if (n_pages) //! 边界条件
 	{
 		size_t pageNum = n_pages - 1;
-		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum)); 
+		const void* mp_pg = bm.getPage_r(make_tuple(tableName + ".mdbf", pageNum));
 		const Sl_Pg_Head* mp_slPage = reinterpret_cast<const Sl_Pg_Head*> (mp_pg);
 		const Entry* mp_entry = &mp_slPage->ent;
 
 		unsigned space_left = mp_slPage->end_fspace - ((char*)(mp_entry + mp_slPage->n_entries) - (char*)mp_pg);
-		if (space_left > rec_size + sizeof(Entry)) // 有足够的空当, new entry
-		{
-			insert2newEntry(tableName, pageNum, rec_size, dataArr);
+		if (space_left > rec_size + sizeof(Entry)) // 有足够的空当, 
+		{	// new entry & index_ins
+			inform_index(tableName, dataArr, insert2newEntry(tableName, pageNum, rec_size, dataArr)); 
+			kill_objs(tableName, dataArr);
 			return 0; //! bug: return after d
 		}
 	}
@@ -116,23 +107,13 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", n_pages));
 	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
 	mp_slPage->init();
-	// insert to this page
-	insert2newEntry(tableName, n_pages, rec_size, dataArr);
-
+	// insert to this page & inform index
+	inform_index(tableName, dataArr, insert2newEntry(tableName, n_pages, rec_size, dataArr));
+	kill_objs(tableName, dataArr);
 	return 0;
 }
 
-
-void RecordManager::dump_rec(char * mp_record, const _DataType * const dataArr[], unsigned n)
-{
-	for (size_t i = 0; i < n; i++)
-	{
-		dataArr[i]->dump(mp_record);
-		mp_record += dataArr[i]->size();
-	}
-}
-
-void RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * const dataArr[])
+p_Entry RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned int rec_size, const _DataType * const dataArr[])
 {
 	void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", i));
 	Sl_Pg_Head* mp_slPage = reinterpret_cast<Sl_Pg_Head*> (mp_pg);
@@ -147,16 +128,51 @@ void RecordManager::insert2newEntry(const string & tableName, size_t i, unsigned
 	char* mp_record = (char*)mp_pg + mp_entry->offs2start;
 	dump_rec(mp_record, dataArr, cm.getTableInfo(tableName).metadata.size());
 	mp_slPage->n_entries++;
-	//todo inform index
-	//! free space here
-	kill_obj(tableName, dataArr);
+	return p_Entry{ i, (char*)mp_entry - (char*)mp_pg };
 }
 
-void RecordManager::kill_obj(const std::string & tableName, const _DataType *const * dataArr)
+void RecordManager::dump_rec(char * mp_record, const _DataType * const dataArr[], unsigned n)
 {
+	for (size_t i = 0; i < n; i++)
+	{
+		dataArr[i]->dump(mp_record);
+		mp_record += dataArr[i]->size();
+	}
+}
+
+void RecordManager::inform_index(const string & tableName, const _DataType *const * dataArr, p_Entry p)
+{
+	auto indxs = cm.getIndex().indexInfos;
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
-		delete dataArr[i];
-	delete[] dataArr;
+	{
+		auto col = cm.getTableInfo(tableName).metadata[i];
+		for (auto indx : indxs)
+		{
+			if (indx.tableName == tableName && indx.columnName == col.name)
+			{
+				int itype; // az
+				auto t = col.type;
+				if (t.first == "int") itype = -1;
+				else if (t.first == "float") itype = 0;
+				else itype = t.second;
+				if (p == p_Entry{ 0,0 })
+				{
+					//todo im.del()
+					itype;
+					indx.indexName;
+					dataArr[i]->to_string();
+				}
+				else
+				{
+					//todo im.ins()
+					itype;
+					indx.indexName;
+					p;
+					dataArr[i]->to_string();
+				}
+			}
+		}
+	}
 }
 
 vector<p_Entry> RecordManager::range_scan(const string & tableName, const vector<Condition>& conds, const vector<p_Entry>& candidates)
@@ -200,16 +216,10 @@ vector<vector<string>> RecordManager::to_print(const string & tableName, const v
 		const Entry* mp_entry = reinterpret_cast<const Entry*>((const char*)mp_pg + get<1>(ent));
 		const void *mp_record = (const char*)mp_pg + mp_entry->offs2start;
 		vector<string> vs_record;
-		for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++) // get each field
-		{
-			auto col = cm.getTableInfo(tableName).metadata[i];
-			pair<DataType, int> type = eType(col.type);
-			_DataType *data = mk_obj(type, mp_record);
-			vs_record.push_back(data->to_string());
-			mp_record = (const char*)mp_record + data->size(); // step to next field
-			delete data;
-		}
+		_DataType** dataArr = mk_objs(tableName, mp_record);
+		for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++) vs_record.push_back(dataArr[i]->to_string());// get each field
 		res.push_back(vs_record);
+		kill_objs(tableName, dataArr);
 	}
 	return res;
 }
@@ -220,7 +230,12 @@ void RecordManager::set_invalid(const string & tableName, const vector<p_Entry>&
 	{
 		void* mp_pg = bm.getPage_w(make_tuple(tableName + ".mdbf", get<0>(ent)));
 		Entry* mp_entry = reinterpret_cast<Entry*>((char*)mp_pg + get<1>(ent));
-		mp_entry->valid = false;
+		mp_entry->valid = false; // set_invalid
+		// inform index
+		const void *mp_record = (const char*)mp_pg + mp_entry->offs2start;
+		_DataType** dataArr = mk_objs(tableName, mp_record);
+		inform_index(tableName, dataArr);
+		kill_objs(tableName, dataArr);
 	}
 }
 int RecordManager::delete_rec(string tableName, vector<Condition> conds, const vector<p_Entry>& candidates)
@@ -234,7 +249,7 @@ int RecordManager::delete_rec(string tableName, vector<Condition> conds, const v
 	return list.size();
 }
 
-pair<DataType, int> eType(pair<std::string, int> type)
+pair<DataType, int> eType(pair<std::string, int> type) // yes you are right... it is nothing.
 {
 	if (type.first == "int") return make_pair(IntType, 0);
 	else if (type.first == "float") return make_pair(FloatType, 0);
@@ -327,4 +342,34 @@ _DataType* RecordManager::mk_obj(std::pair<DataType, int>& type, const string & 
 		return nullptr;
 		break;
 	}
+}
+
+_DataType ** RecordManager::mk_objs(const string & tableName, std::vector<std::string>& s_vals)
+{
+	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
+	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
+	{
+		auto col = cm.getTableInfo(tableName).metadata[i];
+		pair<DataType, int> type = eType(col.type);
+		dataArr[i] = mk_obj(type, s_vals[i]);
+	}
+	return dataArr;
+}
+_DataType ** RecordManager::mk_objs(const string & tableName, const void * mp_record)
+{
+	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
+	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++) // get each field
+	{
+		auto col = cm.getTableInfo(tableName).metadata[i];
+		pair<DataType, int> type = eType(col.type);
+		dataArr[i] = mk_obj(type, mp_record);
+		mp_record = (const char*)mp_record + dataArr[i]->size(); // step to next field
+	}
+	return dataArr;
+}
+void RecordManager::kill_objs(const std::string & tableName, const _DataType *const * dataArr)
+{
+	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
+		delete dataArr[i];
+	delete[] dataArr;
 }
