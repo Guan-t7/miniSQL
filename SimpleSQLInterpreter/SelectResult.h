@@ -9,7 +9,7 @@ public:
 	SelectResult(int);
 	void setSuccess(TableDsc tableInfo, std::vector<std::vector<std::string>> data);
 private:
-	TableDsc tableInfo; //? Ϊʲô��Ҫ������� re:��Ȼû��ʽû���������Ļ��
+	TableDsc tableInfo;
 	std::vector<std::vector<std::string>> data;
 };
 

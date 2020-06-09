@@ -8,7 +8,30 @@
 #include "error.h"
 #include "IndexManager.h"
 
-
+std::vector<p_Entry> handleConditions(std::vector<Condition> conds) {
+	IndexManager im;
+	std::vector<p_Entry> now;
+	std::vector<p_Entry> temp;
+	std::vector<p_Entry> next;
+	for (auto cond : conds) {
+		//handle temp
+		switch (cond.op) {
+		case opType::E:
+		case opType::NE:
+			break;
+		case opType::G:
+			break;
+		}
+		next.clear();
+		sort(temp.begin(), temp.end());
+		if (now.empty()) now = temp;
+		else {
+			set_intersection(now.begin(), now.end(), temp.begin(), temp.end(), std::inserter(next, next.begin()));
+			now = next;
+		}
+	}
+	return now;
+}
 int validateDataType(std::string data, std::pair<std::string, int> type) {
 	bool success = true;
 	if (type.first == "int") {
@@ -38,9 +61,9 @@ int validateDataType(std::string data, std::pair<std::string, int> type) {
 }
 
 SelectResult DBExecutor::selectQuery(std::string tableName, std::vector<Condition> conds) {
-	/* TODO: use index*/
 	SelectResult result(SUCCESS);
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
+	const auto indexes = CatalogManager::getIndex();
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
 	for (auto cond : conds) {
 		Column refCol{};
@@ -51,13 +74,17 @@ SelectResult DBExecutor::selectQuery(std::string tableName, std::vector<Conditio
 		int ret;
 		if ((ret = validateDataType(cond.val, refCol.type)) != SUCCESS) return ret;
 	}
+	auto candidate = handleConditions(conds);
+	if (candidate.empty()) {
+		result.setSuccess(tableInfo, {});
+		return result;
+	}
 	RecordManager rm;
-	result.setSuccess(tableInfo, rm.select(tableName, conds));
+	result.setSuccess(tableInfo, rm.select(tableName, conds, candidate));
 	return result;
 }
 
 QueryResult DBExecutor::deleteQuery(std::string tableName, std::vector<Condition> conds) {
-	/* TODO: use index*/
 	QueryResult result(SUCCESS);
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
@@ -70,8 +97,13 @@ QueryResult DBExecutor::deleteQuery(std::string tableName, std::vector<Condition
 		int ret;
 		if ((ret = validateDataType(cond.val, refCol.type)) != SUCCESS) return ret;
 	}
+	auto candidate = handleConditions(conds);
+	if (candidate.empty()) {
+		result.setSuccess(0);
+		return result;
+	}
 	RecordManager rm;
-	result.setSuccess(rm.delete_rec(tableName, conds));
+	result.setSuccess(rm.delete_rec(tableName, conds, candidate));
 	return result;
 }
 
@@ -105,7 +137,7 @@ QueryResult DBExecutor::createTableQuery(TableDsc info) {
 			pi.indexName = info.name + "PKIndex";
 			pi.tableName = info.name;
 			IndexManager im;
-			im.CreateIndex(pi.indexName, pi.tableName, pi.columnName, toIMType(ptype));
+			im.CreateIndex(toIMType(ptype), pi.indexName, pi.tableName, pi.columnName);
 			auto indexInfos = CatalogManager::getIndex();
 			indexInfos.indexInfos.emplace_back(pi);
 			CatalogManager::updateIndex(indexInfos);
@@ -134,7 +166,7 @@ QueryResult DBExecutor::createIndexQuery(IndexDsc info) {
 	if (pos != tableInfo.metadata.end()) {
 		indexInfos.indexInfos.emplace_back(info);
 		IndexManager im;
-		im.CreateIndex(info.indexName, info.tableName, info.columnName, toIMType(pos->type));
+		im.CreateIndex(toIMType(pos->type), info.indexName, info.tableName, info.columnName);
 		CatalogManager::updateIndex(indexInfos);
 	} else {
 		return NOT_EXISTING_COLUMN_NAME;
