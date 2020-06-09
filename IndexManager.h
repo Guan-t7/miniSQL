@@ -6,17 +6,14 @@
 #include<vector>
 #include<sstream>
 #include"BPlusTree.h"
-#include"API.h"
-#include"BufferManager.h"
 #include"BPlusTreeNode.h"
-
 
 using namespace std;
 
 struct IndexInfo
 {
 public:
-	//typeè¡¨ç¤ºæ•°æ®ç±»å‹ï¼Œ-1ä¸ºintï¼Œ0ä¸ºfloatï¼Œ1-255ä¸ºchar
+	//type±íÊ¾Êı¾İÀàĞÍ£¬-1Îªint£¬0Îªfloat£¬1-255Îªchar
 	int Type;
 	string IndexName;
 	string TableName;
@@ -56,8 +53,7 @@ void* IndexManager::GetIndex(string IndexName);
 
 char* IndexManager::IndexSearch(int Type,string IndexName, string Key);
 
-
-//Conditon 0ä¸ºå°äº 1ä¸ºå°äºç­‰äº 2ä¸ºå¤§äº 3ä¸ºå¤§äºç­‰äº
+//Conditon 0ÎªĞ¡ÓÚ 1ÎªĞ¡ÓÚµÈÓÚ 2Îª´óÓÚ 3Îª´óÓÚµÈÓÚ
 vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition);
 
 
