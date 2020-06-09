@@ -6,7 +6,6 @@
 
 #include "CatalogManager.h"
 #include "error.h"
-#include "IndexManager.h"
 
 
 int validateDataType(std::string data, std::pair<std::string, int> type) {
@@ -104,8 +103,6 @@ QueryResult DBExecutor::createTableQuery(TableInfo info) {
 			pi.columnName = info.primaryKey;
 			pi.indexName = info.name + "PKIndex";
 			pi.tableName = info.name;
-			IndexManager im;
-			im.createIndex(pi.indexName, pi.tableName, pi.columnName, toIMType(ptype));
 			auto indexInfos = CatalogManager::getIndex();
 			indexInfos.indexInfos.emplace_back(pi);
 			CatalogManager::updateIndex(indexInfos);
@@ -133,8 +130,6 @@ QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
 		[&info](const Column& i) {return i.name == info.columnName; });
 	if (pos != tableInfo.metadata.end()) {
 		indexInfos.indexInfos.emplace_back(info);
-		IndexManager im;
-		im.createIndex(info.indexName, info.tableName, info.columnName, toIMType(pos->type));
 		CatalogManager::updateIndex(indexInfos);
 	} else {
 		return NOT_EXISTING_COLUMN_NAME;
@@ -166,10 +161,8 @@ QueryResult DBExecutor::dropTableQuery(std::string tableName) {
 	const auto tableInfo = CatalogManager::getTableInfo(tableName);
 	if (tableInfo.name.empty()) return NOT_EXISTING_TABLE_NAME;
 	auto indexInfo = CatalogManager::getIndex();
-	IndexManager im;
 	for (auto iter = indexInfo.indexInfos.begin(); iter != indexInfo.indexInfos.end();) {
 		if (iter->tableName == tableName) {
-			im.dropIndex(iter->indexName);
 			iter = indexInfo.indexInfos.erase(iter);
 		} else {
 			++iter;
@@ -192,8 +185,6 @@ QueryResult DBExecutor::dropIndexQuery(std::string indexName) {
 		return NOT_EXISTING_INDEX_NAME;
 	}
 	indexInfos.indexInfos.erase(pos);
-	IndexManager im;
-	im.dropIndex(indexName);
 	CatalogManager::updateIndex(indexInfos);
 	result.setSuccess(0);
 	return result;
@@ -214,10 +205,4 @@ std::vector<IndexInfo> DBExecutor::checkIndex(std::string tableName) {
 		if (index.tableName == tableName) infos.emplace_back(index);
 	}
 	return infos;
-}
-
-int toIMType(std::pair<std::string, int> type) {
-	if (type.first == "int") return IndexManager::TYPE_INT;
-	if (type.first == "float") return IndexManager::TYPE_FLOAT;
-	return type.second;
 }

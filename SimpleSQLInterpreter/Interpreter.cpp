@@ -4,15 +4,19 @@
 #include "error.h"
 #include "Parser.h"
 
+int Interpreter::mode = 0;
+
 int Interpreter::quitStatement() {
 	return EXIT;
 }
 
 int Interpreter::execfileStatement(std::string filename) {
+	mode = 1;
 	std::ifstream ifile(filename);
 	std::string s((std::istreambuf_iterator<char>(ifile)),
 		std::istreambuf_iterator<char>());
 	const int result = Parser::parseString(s);
+	std::cout << "File " << filename << " finished."<<std::endl;
 	return result;
 }
 
@@ -20,6 +24,7 @@ int Interpreter::mainLoop() {
 	int result = SUCCESS;
 	std::cout << "Minisql alpha version" << std::endl;
 	while (result != EXIT) {
+		mode = 0;
 		std::cout << "> ";
 		std::string s;
 		std::getline(std::cin, s,';');
@@ -33,6 +38,7 @@ int Interpreter::mainLoop() {
 
 void Interpreter::handleResult(int result) {
 	switch (result) {
+	case EXIT:
 	case UNKNOWN_ERROE_WHEN_PARSING:
 		//Should be handled by error listener
 		break;

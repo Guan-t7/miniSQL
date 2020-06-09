@@ -58,7 +58,7 @@ UNIQUE: 'unique';
 
 //literal
 DECIMAL_LITERAL: [+-]? DEC_DIGIT+;
-STRING_LITERAL: DQUOTA_STRING;
+STRING_LITERAL: DQUOTA_STRING | SQUOTA_STRING;
 REAL_LITERAL:
 	[+-]? (DEC_DIGIT+)? '.' DEC_DIGIT+
 	| [+-]? DEC_DIGIT+ '.' EXPONENT_NUM_PART
@@ -73,6 +73,7 @@ SEMICOLON: ';';
 
 fragment EXPONENT_NUM_PART: 'E' [-+]? DEC_DIGIT+;
 DQUOTA_STRING: '"' .*? '"';
+SQUOTA_STRING: '\'' .*? '\'';
 
 fragment DEC_DIGIT: [0-9];
 

@@ -7,5 +7,6 @@ public:
 	static int execfileStatement(std::string filename);
 	static int mainLoop();
 	static void handleResult(int result);
+	static int mode;
 };
 

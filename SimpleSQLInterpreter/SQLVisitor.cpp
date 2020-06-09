@@ -35,7 +35,7 @@ antlrcpp::Any SQLVisitor::visitEmptyStatement(sqlParser::EmptyStatementContext* 
 
 antlrcpp::Any SQLVisitor::visitSelectQuery(sqlParser::SelectQueryContext* ctx) {
 	auto result = DBExecutor::selectQuery(ctx->selectTarget()->accept(this), ctx->optionalWhereClause()->accept(this));
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
@@ -72,13 +72,13 @@ antlrcpp::Any SQLVisitor::visitWhereOP(sqlParser::WhereOPContext* ctx) {
 
 antlrcpp::Any SQLVisitor::visitDropIndexQuery(sqlParser::DropIndexQueryContext* ctx) {
 	auto result = DBExecutor::dropIndexQuery(ctx->indexName()->accept(this));
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
 antlrcpp::Any SQLVisitor::visitDropTableQuery(sqlParser::DropTableQueryContext* ctx) {
 	auto result = DBExecutor::dropTableQuery(ctx->tableName()->accept(this));
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
@@ -87,7 +87,7 @@ antlrcpp::Any SQLVisitor::visitCreateIndexQuery(sqlParser::CreateIndexQueryConte
 		ctx->tableName()->accept(this), ctx->indexName()->accept(this), ctx->columnName()->accept(this)
 	};
 	auto result = DBExecutor::createIndexQuery(info);
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
@@ -98,7 +98,7 @@ antlrcpp::Any SQLVisitor::visitCreateTableQuery(sqlParser::CreateTableQueryConte
 	const TableInfo info{ ctx->tableName()->accept(this), ctx->columnDefinitions()->accept(this), primaryKey };
 
 	auto result = DBExecutor::createTableQuery(info);
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
@@ -127,7 +127,7 @@ antlrcpp::Any SQLVisitor::visitPrimaryKeyDefinition(sqlParser::PrimaryKeyDefinit
 antlrcpp::Any SQLVisitor::visitInsertQuery(sqlParser::InsertQueryContext* ctx) {
 	std::string tableName = ctx->tableName()->accept(this);
 	auto result = DBExecutor::insertQuery(tableName, ctx->literalValues()->accept(this));
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
@@ -144,7 +144,7 @@ antlrcpp::Any SQLVisitor::visitLiteralValues(sqlParser::LiteralValuesContext* ct
 
 antlrcpp::Any SQLVisitor::visitDeleteQuery(sqlParser::DeleteQueryContext* ctx) {
 	auto result = DBExecutor::deleteQuery(ctx->tableName()->accept(this), ctx->optionalWhereClause()->accept(this));
-	std::cout << result.print();
+	if (Interpreter::mode == 0) std::cout << result.print();
 	return result.getStatus();
 }
 
