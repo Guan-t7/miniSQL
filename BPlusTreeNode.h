@@ -7,6 +7,7 @@
 #include "BufferManager.h"
 
 using namespace std;
+using p_Entry = tuple<unsigned,unsigned>;
 
 template<typename TreeNode>
 class Node
@@ -20,7 +21,7 @@ public:
     bool Leaf;
     vector<TreeNode> key;
     vector<Node*> child;
-    vector<char*> value;
+    vector<tuple> value;
 
     Node(int degree, bool isLeaf = false);
     ~Node(); 
@@ -29,7 +30,7 @@ public:
     bool Search(TreeNode Key, size_t &Flag);
     bool Move(size_t Flag);
     size_t Add(TreeNode &Key);
-    size_t Add(TreeNode &Key, char* val);
+    size_t Add(TreeNode &Key, tuple val);
     
 };
 
@@ -40,7 +41,7 @@ Node<TreeNode>::Node(int d, bool isLeaf):Parent(NULL),Next(NULL),KeyNum(0),Leaf(
     {
         key.push_back(TreeNode());
         child.push_back(NULL);
-        value.push_back(char*());
+        value.push_back(tuple());
     }
     child.push_back(NULL);
 }
@@ -97,7 +98,7 @@ Node<TreeNode>* Node<TreeNode>::Divide(TreeNode &Key)
             n->key[i-mid-1]=this->key[i];
             this->key[i] = TreeNode();
             n->value[i-mid-1]=this->value[i]
-            this->value[i]=char*();
+            this->value[i]=tuple();
         }
         n->Next = this->Next;
         this->Next=n;
@@ -210,7 +211,7 @@ bool Node<TreeNode>::Move(size_t &Flag)
                 value[i]=value[i+1];
             }
             key[KeyNum-1]=TreeNode();
-            value[KeyNum-1]=char*();
+            value[KeyNum-1]=tuple();
         }
         else
         {
@@ -267,7 +268,7 @@ size_t Node<TreeNode>::Add(TreeNode &Key)
 }
 
 template<typename TreeNode>
-size_t Node<TreeNode>::Add(TreeNode &Key, char* val)
+size_t Node<TreeNode>::Add(TreeNode &Key, tuple val)
 {
     if(!Leaf)
     {

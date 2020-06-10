@@ -3,6 +3,19 @@
 const unsigned FILL = 0x100; // 摊还由懒惰删除引起的插入代价
 static unsigned F = 0;
 
+pair<DataType, int> eType(pair<std::string, int> type) // yes you are right... it is nothing.
+{
+	if (type.first == "int") return make_pair(IntType, 0);
+	else if (type.first == "float") return make_pair(FloatType, 0);
+	else return make_pair(StringType, type.second);
+}
+short itype(pair<std::string, int> t)
+{
+	if (t.first == "int") return -1;
+	else if (t.first == "float") return 0;
+	else return t.second;
+}
+
 //todo index；
 RecordManager::RecordManager() : bm(BufferManager::instance())
 {
@@ -98,7 +111,7 @@ int RecordManager::insert(string tableName, std::vector<std::string> s_vals) //t
 		unsigned space_left = mp_slPage->end_fspace - ((char*)(mp_entry + mp_slPage->n_entries) - (char*)mp_pg);
 		if (space_left > rec_size + sizeof(Entry)) // 有足够的空当, 
 		{	// new entry & index_ins
-			inform_index(tableName, dataArr, insert2newEntry(tableName, pageNum, rec_size, dataArr)); 
+			inform_index(tableName, dataArr, insert2newEntry(tableName, pageNum, rec_size, dataArr));
 			kill_objs(tableName, dataArr);
 			return 0; //! bug: return after d
 		}
@@ -140,8 +153,9 @@ void RecordManager::dump_rec(char * mp_record, const _DataType * const dataArr[]
 	}
 }
 
-void RecordManager::inform_index(const string & tableName, const _DataType *const * dataArr, p_Entry p)
+vector<tuple<string, size_t, short>> RecordManager::resolve_indxs(const string & tableName)
 {
+	vector<tuple<string, size_t, short>> res;
 	auto indxs = cm.getIndex().indexInfos;
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
 	{
@@ -150,27 +164,33 @@ void RecordManager::inform_index(const string & tableName, const _DataType *cons
 		{
 			if (indx.tableName == tableName && indx.columnName == col.name)
 			{
-				int itype; // az
-				auto t = col.type;
-				if (t.first == "int") itype = -1;
-				else if (t.first == "float") itype = 0;
-				else itype = t.second;
-				if (p == p_Entry{ 0,0 })
-				{
-					//todo im.del()
-					itype;
-					indx.indexName;
-					dataArr[i]->to_string();
-				}
-				else
-				{
-					//todo im.ins()
-					itype;
-					indx.indexName;
-					p;
-					dataArr[i]->to_string();
-				}
+				res.emplace_back(tuple<string, size_t, short>{indx.indexName, i, itype(col.type)});
+				break;
 			}
+		}
+	}
+	return res;
+}
+
+void RecordManager::inform_index(const string & tableName, const _DataType *const * dataArr, p_Entry p)
+{
+	auto indxs = resolve_indxs(tableName);
+	for (auto indx : indxs)
+	{
+		if (p == p_Entry{ 0,0 })
+		{
+			//todo im.del()
+			get<2>(indx); // itype
+			get<0>(indx); // indexName
+			dataArr[get<1>(indx)]->to_string(); // col
+		}
+		else
+		{
+			//todo im.ins()
+			p;
+			get<2>(indx); // itype
+			get<0>(indx); // indexName
+			dataArr[get<1>(indx)]->to_string(); // col
 		}
 	}
 }
@@ -249,11 +269,32 @@ int RecordManager::delete_rec(string tableName, vector<Condition> conds, const v
 	return list.size();
 }
 
-pair<DataType, int> eType(pair<std::string, int> type) // yes you are right... it is nothing.
+void RecordManager::init_index(const string & indexName) //todo reduce code duplication
 {
-	if (type.first == "int") return make_pair(IntType, 0);
-	else if (type.first == "float") return make_pair(FloatType, 0);
-	else return make_pair(StringType, type.second);
+	auto indxs = cm.getIndex().indexInfos;
+	for (auto indx : indxs)
+	{
+		if (indx.indexName == indexName)
+		{
+			auto vcol = cm.getTableInfo(indx.tableName).metadata;
+			size_t i;
+			for (i = 0; i < vcol.size() && vcol[i].name != indx.columnName; i++); // 栏号i
+
+			vector<p_Entry> list = move(full_table_scan(indx.tableName, vector<Condition>{}));
+			for (auto &&ent : list)
+			{
+				const void* mp_pg = bm.getPage_r(make_tuple(indx.tableName + ".mdbf", get<0>(ent)));
+				const Entry* mp_entry = reinterpret_cast<const Entry*>((const char*)mp_pg + get<1>(ent));
+				const void *mp_record = (const char*)mp_pg + mp_entry->offs2start;
+				//todo itype dataarr
+				_DataType** dataarr = mk_objs(indx.tableName, mp_record);
+
+				//todo im.ins()
+				kill_objs(indx.tableName, dataarr);
+			}
+			return;
+		}
+	}
 }
 
 bool RecordManager::conds_fit(const vector<Column> colMetas, const void * mp_record, const std::vector<Condition> & conds)
@@ -307,7 +348,7 @@ bool RecordManager::cond_fit(const Condition & c, const _DataType *data, const _
 	}
 	return fit;
 }
-_DataType* RecordManager::mk_obj(std::pair<DataType, int> &type, const void * mp_record)
+_DataType* RecordManager::mk_obj(const pair<DataType, int> &type, const void * mp_record)
 {
 	switch (type.first)
 	{
@@ -325,7 +366,7 @@ _DataType* RecordManager::mk_obj(std::pair<DataType, int> &type, const void * mp
 		break;
 	}
 }
-_DataType* RecordManager::mk_obj(std::pair<DataType, int>& type, const string & val)
+_DataType* RecordManager::mk_obj(const pair<DataType, int>& type, const string & val)
 {
 	switch (type.first)
 	{
@@ -344,7 +385,7 @@ _DataType* RecordManager::mk_obj(std::pair<DataType, int>& type, const string & 
 	}
 }
 
-_DataType ** RecordManager::mk_objs(const string & tableName, std::vector<std::string>& s_vals)
+_DataType ** RecordManager::mk_objs(const string & tableName, const vector<std::string>& s_vals)
 {
 	_DataType** dataArr = new _DataType*[cm.getTableInfo(tableName).metadata.size()];
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
@@ -367,7 +408,7 @@ _DataType ** RecordManager::mk_objs(const string & tableName, const void * mp_re
 	}
 	return dataArr;
 }
-void RecordManager::kill_objs(const std::string & tableName, const _DataType *const * dataArr)
+void RecordManager::kill_objs(const std::string & tableName, _DataType ** dataArr)
 {
 	for (size_t i = 0; i < cm.getTableInfo(tableName).metadata.size(); i++)
 		delete dataArr[i];
