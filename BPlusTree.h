@@ -8,6 +8,7 @@
 #include "BPlusTreeNode.h"
 
 using namespace std;
+using p_Entry =tuple<unsigned,unsigned>;
 
 struct SearchNode
 {
@@ -36,9 +37,9 @@ public:
     Node<Tree>* Root;
     BPlusTree(string IndexName, int Keysize, int degree = 5);
     ~BPlusTree();
-    char* Search(Tree &Key);
-    vector<char*> ConditionSearch(Tree &Key, int Condition);
-    bool Insertion(Tree &Key, char* Address);
+    tuple Search(Tree &Key);
+    vector<tuple> ConditionSearch(Tree &Key, int Condition);
+    bool Insertion(Tree &Key, tuple Address);
     bool Deletion(Tree &Key);
     void DropTree(Node<Tree>* p);
 };
@@ -148,7 +149,7 @@ bool BPlusTree<Tree>::InsertionAdjust(Node<Tree>* p)
 }
 
 template<typename Tree>
-bool BPlusTree<Tree>::Insertion(Tree &Key, char* Address)
+bool BPlusTree<Tree>::Insertion(Tree &Key, tuple Address)
 {
     SearchNode sn;
     if(Address == NULL)
@@ -193,7 +194,7 @@ void BPlusTree<Tree>::DropTree(Node<Tree>* p)
 }    
     
 template<typename Tree> 
-char* BPlusTree<Tree>::Search(Tree &Key)
+tuple BPlusTree<Tree>::Search(Tree &Key)
 {
     if(!Root)
         return 0;
@@ -206,10 +207,10 @@ char* BPlusTree<Tree>::Search(Tree &Key)
 }  
     
 template<typename Tree> 
-vector<char*> BPlusTree<Tree>::ConditionSearch(Tree &Key, int Condition)
+vector<tuple> BPlusTree<Tree>::ConditionSearch(Tree &Key, int Condition)
 {
-    vector<char*> result;
-    char* re;
+    vector<tuple> result;
+    tuple re;
     SearchNode s;
     if(!Root)
         return result;
