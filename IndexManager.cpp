@@ -3,7 +3,7 @@
 #include<vector>
 
 using namespace std;
-
+using p_Entry = tuple<unsigned, unsigned>;
 
 IndexManager::IndexManager()
 {
@@ -109,7 +109,7 @@ void* IndexManager::GetIndex(string IndexName)
 	return NULL;
 }
 
-char* IndexManager::IndexSearch(int Type,string IndexName, string Key)
+tuple IndexManager::IndexSearch(int Type,string IndexName, string Key)
 {
 	ConvertKey(Type, Key);
 	
@@ -135,7 +135,7 @@ char* IndexManager::IndexSearch(int Type,string IndexName, string Key)
 }
 
 //Conditon 0为小于 1为小于等于 2为大于 3为大于等于
-vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition)
+vector<tuple> IndexManager::IndexConditionSearch(int Type, string IndexName, string Key, int Condition)
 {
 	ConvertKey(Type, Key);
 	if(Type == -1)
@@ -159,7 +159,7 @@ vector<char*> IndexManager::IndexConditionSearch(int Type, string IndexName, str
 	}
 }
 
-void IndexManager::IndexInsertion(int Type, string IndexName, string Key,char* Address)
+void IndexManager::IndexInsertion(int Type, string IndexName, string Key,tuple Address)
 {
 	ConvertKey(Type,Key);
 	if(Type == -1)
@@ -207,7 +207,7 @@ void IndexManager::IndexDeletion(int Type, string IndexName, string Key)
 	}
 }
 
-void IndexManager::IndexUpdate(int Type, string IndexName, string Key, char* Address)
+void IndexManager::IndexUpdate(int Type, string IndexName, string Key, tuple Address)
 {
 	ConvertKey(Type,Key);
 	if(Type == -1)
