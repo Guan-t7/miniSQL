@@ -30,12 +30,12 @@ int Parser::parseString(std::string str) {
 	sqlParser::RootContext* tree = parser.root();
 
 	auto visitor = SQLVisitor();
-	//try {
+	try {
 		auto result = visitor.visitRoot(tree);
 		if (result.isNotNull()) return result;
 		else return UNKNOWN_ERROE_WHEN_PARSING;
-	/*} catch (...) {
+	} catch (...) {
 		return UNKNOWN_ERROE_WHEN_PARSING;
-	}*/
+	}
 
 }

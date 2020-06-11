@@ -78,6 +78,10 @@ void Interpreter::handleResult(int result) {
 	case BAD_VALUE:
 		std::cout << "Bad value" << std::endl;
 		break;
+	case NOT_UNIQUE_INDEX_COLUMN:
+		std::cout << "Not unique index column" << std::endl;
+	case DUPLICATED_UNIQUE_KEY:
+		std::cout << "Duplicated unique key" << std::endl;
 	case SUCCESS:
 		//OK, nothing happens
 		break;

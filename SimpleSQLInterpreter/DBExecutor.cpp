@@ -129,8 +129,13 @@ QueryResult DBExecutor::createIndexQuery(IndexInfo info) {
 	auto pos = std::find_if(tableInfo.metadata.begin(), tableInfo.metadata.end(),
 		[&info](const Column& i) {return i.name == info.columnName; });
 	if (pos != tableInfo.metadata.end()) {
-		indexInfos.indexInfos.emplace_back(info);
-		CatalogManager::updateIndex(indexInfos);
+		if (pos->unique) {
+			indexInfos.indexInfos.emplace_back(info);
+			CatalogManager::updateIndex(indexInfos);
+		} else {
+			return NOT_UNIQUE_INDEX_COLUMN;
+		}
+
 	} else {
 		return NOT_EXISTING_COLUMN_NAME;
 	}
